@@ -21,7 +21,7 @@
     <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 🔴 FIREBASE SDKs (খুবই গুরুত্বপূর্ণ ডাটাবেসের জন্য) -->
+    <!-- 🔴 FIREBASE SDKs -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 
@@ -41,7 +41,7 @@
         const { useState, useEffect, useRef } = React;
 
         // ==========================================
-        // 🔴 ফায়ারবেস ডাটাবেস কানেকশন (Firebase Setup)
+        // 🔴 ফায়ারবেস ক্লাউড ডাটাবেস সেটআপ
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyBmJGTuAvMF9FM6MwOSi4BZqFmGyqb2Yd0",
@@ -52,7 +52,6 @@
             appId: "1:427378824805:web:54373b156fc7f40f65588c"
         };
 
-        // Initialize Firebase
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
         }
@@ -62,7 +61,6 @@
         // 🟢 কাস্টম হুকস (Custom Hooks)
         // ==========================================
         
-        // ১. LocalStorage Hook (অটো লগআউট রোধ করতে)
         function useLocalStorage(key, initialValue) {
           const [storedValue, setStoredValue] = useState(() => {
             try {
@@ -77,7 +75,7 @@
           return [storedValue, setStoredValue];
         }
 
-        // ২. Hybrid Database Sync Hook (ফায়ারবেস এবং লোকাল স্টোরেজ একসাথে)
+        // --- Hybrid Database Sync Hook ---
         function useDatabase(collectionName, initialData = []) {
             const [data, setData] = useState(() => {
                 const local = window.localStorage.getItem('goti_' + collectionName);
@@ -100,15 +98,10 @@
             }, [collectionName]);
 
             const addData = (newItem) => {
-                // সাথে সাথে মোবাইলে দেখানোর জন্য (Optimistic UI)
                 const newData = [newItem, ...data];
                 setData(newData);
                 window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData));
-
-                // ক্লাউডে সেভ করার কমান্ড
-                db.collection(collectionName).doc(newItem.id.toString()).set(newItem).catch(err => {
-                    alert("ফায়ারবেস রুলস (Rules) ঠিক করা নেই! দয়া করে ফায়ারবেস ডাটাবেস রুলস 'true' করুন।");
-                });
+                db.collection(collectionName).doc(newItem.id.toString()).set(newItem).catch(err => console.log(err));
             };
 
             const updateData = (id, updatedFields) => {
@@ -132,7 +125,7 @@
         const translations = {
           bn: {
             appName: 'গতি এক্সপ্রেস', subtitle: 'এমপ্লয়ি ম্যানেজমেন্ট সিস্টেম', loginID: 'লগইন আইডি (ফোন বা ইমেইল)', password: 'পাসওয়ার্ড', loginBtn: 'লগইন করুন',
-            home: 'ড্যাশবোর্ড', employees: 'কর্মচারী প্রোফাইল', attendance: 'উপস্থিতি', expenses: 'যাতায়াত ও খরচ', reports: 'ডেইলি রিপোর্ট', payments: 'হিসাব ও পেমেন্ট',
+            home: 'ড্যাশবোর্ড', employees: 'কর্মচারী প্রোফাইল', attendance: 'উপস্থিতি', expenses: 'যাতায়াত ও খরচ', reports: 'ডেইলি রিপোর্ট', payments: 'হিসাব ও পেমেন্ট', leave: 'ছুটি (Leave)', applyLeave: 'ছুটির আবেদন', reason: 'ছুটির কারণ', startDate: 'শুরুর তারিখ', endDate: 'শেষ তারিখ', present: 'উপস্থিত', absent: 'অনুপস্থিত', editProfile: 'প্রোফাইল আপডেট', reject: 'বাতিল',
             role: 'রোল', designation: 'পদবী', myTasks: 'আমার টাস্ক লিস্ট', myActivity: 'আমার একটিভিটি', noTask: 'কোনো নতুন টাস্ক নেই', noActivity: 'কোনো একটিভিটি নেই',
             liveCamera: 'লাইভ ক্যামেরা (সেলফি)', submitAttendance: 'উপস্থিতি সাবমিট করুন', attHistory: 'উপস্থিতির ইতিহাস', allAtt: 'সকল কর্মচারীর উপস্থিতি',
             photo: 'ছবি', name: 'নাম', date: 'তারিখ', time: 'সময়', noRecord: 'কোনো রেকর্ড পাওয়া যায়নি', amount: 'টাকার পরিমাণ (৳)', desc: 'খরচের বিবরণ/স্থান',
@@ -141,7 +134,7 @@
           },
           en: {
             appName: 'Goti Express', subtitle: 'Employee Management System', loginID: 'Login ID (Phone or Email)', password: 'Password', loginBtn: 'Login',
-            home: 'Dashboard', employees: 'Employee Profiles', attendance: 'Attendance', expenses: 'Travel & Expenses', reports: 'Daily Reports', payments: 'Payments & Accounts',
+            home: 'Dashboard', employees: 'Employee Profiles', attendance: 'Attendance', expenses: 'Travel & Expenses', reports: 'Daily Reports', payments: 'Payments & Accounts', leave: 'Leave', applyLeave: 'Apply Leave', reason: 'Reason', startDate: 'Start Date', endDate: 'End Date', present: 'Present', absent: 'Absent', editProfile: 'Update Profile', reject: 'Reject',
             role: 'Role', designation: 'Designation', myTasks: 'MY TASK LIST', myActivity: 'MY ACTIVITY LIST', noTask: 'No new tasks', noActivity: 'No activity found',
             liveCamera: 'Live Camera (Selfie)', submitAttendance: 'Submit Attendance', attHistory: 'My Attendance History', allAtt: 'All Employees Attendance',
             photo: 'Photo', name: 'Name', date: 'Date', time: 'Time', noRecord: 'No records found', amount: 'Amount (৳)', desc: 'Expense Description',
@@ -168,9 +161,10 @@
           const [currentView, setCurrentView] = useLocalStorage('goti_currentView', 'dashboard');
           const [sidebarOpen, setSidebarOpen] = useState(false);
 
-          // Database States (Connected to Cloud & Local)
+          // Database States 
           const [users, addUser, updateUser, deleteUser] = useDatabase('users', initialUsers);
           const [attendances, addAttendance] = useDatabase('attendances', []);
+          const [leaves, addLeave, updateLeave, deleteLeave] = useDatabase('leaves', []);
           const [expenses, addExpense, updateExpense, deleteExpense] = useDatabase('expenses', []);
           const [reports, addReport] = useDatabase('reports', []);
           const [payments, addPayment] = useDatabase('payments', []);
@@ -214,8 +208,8 @@
                   <button onClick={() => setLang('en')} className={`px-3 py-1 rounded-md text-sm font-bold transition ${lang === 'en' ? 'bg-blue-600 text-white' : 'text-blue-200 hover:text-white'}`}>EN</button>
                 </div>
 
-                <div className="w-24 h-24 bg-gradient-to-tr from-blue-600 to-blue-400 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(37,99,235,0.5)]">
-                   <i className="fa-solid fa-truck-fast text-4xl text-white"></i>
+                <div className="mb-6 flex justify-center">
+                   <img src="https://i.ibb.co.com/fGYvBbLs/white-goti.png" alt="Goti Express Logo" className="h-28 object-contain drop-shadow-2xl" />
                 </div>
 
                 <div className="max-w-md w-full bg-[#1e293b] border border-blue-900/50 rounded-2xl shadow-2xl p-8">
@@ -258,7 +252,7 @@
               <div className={`fixed inset-y-0 left-0 z-50 w-72 md:w-64 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 transition-transform duration-300 ease-in-out bg-[#1e293b] flex flex-col shadow-2xl`}>
                 <div className="p-4 bg-[#0f172a] flex items-center justify-between md:justify-center h-16 shrink-0 border-b border-slate-700">
                   <div className="flex items-center gap-3">
-                    <i className="fa-solid fa-truck-fast text-blue-500 text-xl"></i>
+                    <img src="https://i.ibb.co.com/fGYvBbLs/white-goti.png" alt="Logo" className="h-8 object-contain" />
                     <h2 className="text-xl font-bold text-blue-400 truncate">{t('appName')}</h2>
                   </div>
                   <button className="md:hidden text-slate-400 p-2" onClick={() => setSidebarOpen(false)}>
@@ -285,6 +279,7 @@
                     <SidebarItem icon="fa-house" label={t('home')} active={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setSidebarOpen(false);}} />
                     {currentUser.role === 'admin' && <SidebarItem icon="fa-users" label={t('employees')} active={currentView === 'employees'} onClick={() => {setCurrentView('employees'); setSidebarOpen(false);}} />}
                     <SidebarItem icon="fa-user-check" label={t('attendance')} active={currentView === 'attendance'} onClick={() => {setCurrentView('attendance'); setSidebarOpen(false);}} />
+                    <SidebarItem icon="fa-calendar-day" label={t('leave')} active={currentView === 'leave'} onClick={() => {setCurrentView('leave'); setSidebarOpen(false);}} />
                     <SidebarItem icon="fa-money-bill-wave" label={t('expenses')} active={currentView === 'expenses'} onClick={() => {setCurrentView('expenses'); setSidebarOpen(false);}} />
                     <SidebarItem icon="fa-file-lines" label={t('reports')} active={currentView === 'reports'} onClick={() => {setCurrentView('reports'); setSidebarOpen(false);}} />
                     {currentUser.role === 'admin' && <SidebarItem icon="fa-briefcase" label={t('payments')} active={currentView === 'payments'} onClick={() => {setCurrentView('payments'); setSidebarOpen(false);}} />}
@@ -322,7 +317,7 @@
 
                 <header className="md:hidden h-14 bg-[#0f172a] text-white flex items-center justify-between px-4 shrink-0 shadow-md z-10">
                   <div className="flex items-center gap-2">
-                    <i className="fa-solid fa-truck-fast text-blue-500"></i>
+                    <img src="https://i.ibb.co.com/fGYvBbLs/white-goti.png" alt="Logo" className="h-6 object-contain" />
                     <span className="font-bold text-blue-100">{t(currentView)}</span>
                   </div>
                   <div className="bg-slate-800 p-1 rounded-lg flex border border-slate-700">
@@ -334,10 +329,11 @@
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#e2e8f0] p-4 pb-24 md:pb-6 sm:p-6 lg:p-8">
                   <div className="max-w-7xl mx-auto">
                     {currentView === 'dashboard' && <DashboardView user={currentUser} t={t} lang={lang} updateUser={updateUserProfile} />}
-                    {currentView === 'attendance' && <AttendanceView user={currentUser} attendances={attendances} addAttendance={addAttendance} t={t} lang={lang} />}
+                    {currentView === 'attendance' && <AttendanceView user={currentUser} attendances={attendances} addAttendance={addAttendance} users={users} t={t} lang={lang} />}
+                    {currentView === 'leave' && <LeaveView user={currentUser} leaves={leaves} addLeave={addLeave} updateLeave={updateLeave} deleteLeave={deleteLeave} t={t} lang={lang} />}
                     {currentView === 'expenses' && <ExpenseView user={currentUser} expenses={expenses} addExpense={addExpense} updateExpense={updateExpense} deleteExpense={deleteExpense} t={t} />}
                     {currentView === 'reports' && <ReportView user={currentUser} reports={reports} addReport={addReport} t={t} />}
-                    {currentView === 'employees' && currentUser.role === 'admin' && <EmployeesView users={users} addUser={addUser} deleteUser={deleteUser} t={t} lang={lang} />}
+                    {currentView === 'employees' && currentUser.role === 'admin' && <EmployeesView users={users} addUser={addUser} updateUser={updateUser} deleteUser={deleteUser} t={t} lang={lang} />}
                     {currentView === 'payments' && currentUser.role === 'admin' && <PaymentsView users={users} payments={payments} addPayment={addPayment} expenses={expenses} t={t} lang={lang} />}
                   </div>
                 </main>
@@ -361,7 +357,7 @@
         }
 
         // ==========================================
-        // 🔵 Views Components (Dashboard, DB Synced)
+        // 🔵 Views Components
         // ==========================================
         function BottomNavItem({ icon, label, active, onClick }) {
           return (
@@ -431,12 +427,67 @@
           );
         }
 
+        // --- STREAMING_CHUNK:Rendering Leave View... ---
+        function LeaveView({ user, leaves, addLeave, updateLeave, deleteLeave, t, lang }) {
+          const [startDate, setStartDate] = useState('');
+          const [endDate, setEndDate] = useState('');
+          const [reason, setReason] = useState('');
+
+          const submitLeave = (e) => {
+            e.preventDefault();
+            addLeave({ id: Date.now(), userId: user.id, userName: user.name, startDate, endDate, reason, requestDate: new Date().toLocaleDateString('en-CA'), status: t('pending') });
+            setStartDate(''); setEndDate(''); setReason('');
+          };
+
+          const displayLeaves = user.role === 'admin' ? leaves : leaves.filter(l => l.userId === user.id);
+
+          return (
+            <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
+              <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2"><i className="fa-solid fa-calendar-day text-blue-500"></i> {t('leave')}</h2>
+              
+              {user.role === 'employee' && (
+                <form onSubmit={submitLeave} className="mb-8 bg-blue-50/50 p-5 md:p-6 rounded-2xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div><label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">{t('startDate')}</label><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required /></div>
+                  <div><label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">{t('endDate')}</label><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required /></div>
+                  <div className="md:col-span-2"><label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">{t('reason')}</label><textarea value={reason} onChange={e => setReason(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none" required placeholder="ছুটির বিস্তারিত কারণ লিখুন..."></textarea></div>
+                  <div className="md:col-span-2 mt-2"><button type="submit" className="w-full md:w-auto bg-blue-600 text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 font-bold shadow-lg active:scale-95 transition-all"><i className="fa-solid fa-paper-plane mr-2"></i> {t('applyLeave')}</button></div>
+                </form>
+              )}
+
+              <div className="space-y-4">
+                {displayLeaves.length === 0 ? <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">{t('noRecord')}</div> :
+                  displayLeaves.map(leave => (
+                    <div key={leave.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative">
+                      <div className="flex justify-between items-start mb-2"><span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md"><i className="fa-regular fa-calendar mr-1"></i> Requested: {leave.requestDate}</span><span className={`px-2 py-0.5 text-[10px] rounded-md font-bold uppercase tracking-wider border ${leave.status === t('approved') ? 'bg-green-50 text-green-700 border-green-200' : leave.status === t('reject') ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>{leave.status}</span></div>
+                      {user.role === 'admin' && <div className="text-sm font-bold text-blue-600 mb-2">{leave.userName}</div>}
+                      <div className="text-sm text-slate-800 font-bold mb-1">Date: {leave.startDate} to {leave.endDate}</div>
+                      <div className="text-sm text-slate-600 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">{leave.reason}</div>
+                      <div className="flex gap-2">
+                          {user.role === 'admin' && leave.status === t('pending') && (
+                            <>
+                              <button onClick={() => updateLeave(leave.id, { status: t('approved') })} className="flex-1 bg-green-50 text-green-600 hover:bg-green-600 hover:text-white py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"><i className="fa-solid fa-check"></i> Approve</button>
+                              <button onClick={() => updateLeave(leave.id, { status: t('reject') })} className="flex-1 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"><i className="fa-solid fa-xmark"></i> Reject</button>
+                            </>
+                          )}
+                          <button onClick={() => {if(window.confirm('Delete?')) deleteLeave(leave.id)}} className="flex-1 max-w-[100px] bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"><i className="fa-solid fa-trash-can"></i></button>
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+          );
+        }
+
         // --- STREAMING_CHUNK:Rendering Attendance View with Image Compression... ---
-        function AttendanceView({ user, attendances, addAttendance, t, lang }) {
+        function AttendanceView({ user, attendances, addAttendance, users, t, lang }) {
           const videoRef = useRef(null);
           const canvasRef = useRef(null);
           const [cameraActive, setCameraActive] = useState(false);
           const [cameraError, setCameraError] = useState('');
+
+          const locale = lang === 'bn' ? 'bn-BD' : 'en-US';
+          const currentDateFormatted = new Intl.DateTimeFormat(locale, { timeZone: 'Asia/Dhaka', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 
           const startCamera = async () => {
             try {
@@ -471,16 +522,10 @@
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            // 🔴 ছবির সাইজ কমানোর জন্য PNG এর বদলে JPEG এবং 30% Quality ব্যবহার করা হলো
-            // কারণ ফায়ারবেস ডাটাবেসে 1MB এর বড় ফাইল সেভ করা যায় না
             const photoDataUrl = canvas.toDataURL('image/jpeg', 0.3);
-            
-            const locale = lang === 'bn' ? 'bn-BD' : 'en-US';
-            const currentDate = new Intl.DateTimeFormat(locale, { timeZone: 'Asia/Dhaka', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
             const currentTime = new Intl.DateTimeFormat(locale, { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).format(new Date());
 
-            // Add to Cloud DB
-            addAttendance({ id: Date.now(), userId: user.id, userName: user.name, date: currentDate, time: currentTime, photo: photoDataUrl });
+            addAttendance({ id: Date.now(), userId: user.id, userName: user.name, date: currentDateFormatted, time: currentTime, photo: photoDataUrl });
             
             const btn = document.getElementById('submit-att-btn');
             if(btn) {
@@ -492,6 +537,7 @@
           };
 
           const myAttendances = user.role === 'admin' ? attendances : attendances.filter(a => a.userId === user.id);
+          const allEmployees = users ? users.filter(u => u.role === 'employee') : [];
 
           return (
             <div className="bg-white md:p-8 p-5 rounded-2xl border border-slate-200 shadow-sm">
@@ -533,8 +579,38 @@
                 </div>
               )}
 
+              {user.role === 'admin' && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-bold text-slate-800 mb-4 bg-slate-100 p-3 rounded-lg border border-slate-200">
+                    <i className="fa-solid fa-clipboard-user mr-2 text-blue-600"></i> আজকের উপস্থিতি (Today's Status) - <span className="text-blue-600">{currentDateFormatted}</span>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {allEmployees.map(emp => {
+                      const record = attendances.find(a => a.userId === emp.id && a.date === currentDateFormatted);
+                      return (
+                        <div key={emp.id} className={`p-4 rounded-2xl border shadow-sm flex items-center gap-4 ${record ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                          {record ? (
+                            <img src={record.photo} className="w-12 h-12 rounded-xl object-cover border border-green-300 shadow-sm" style={{ transform: 'scaleX(-1)' }} />
+                          ) : (
+                            <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-red-400 shadow-sm"><i className="fa-solid fa-user-xmark text-xl"></i></div>
+                          )}
+                          <div className="flex-1">
+                            <h4 className="font-bold text-slate-800 text-sm leading-tight mb-1">{emp.name}</h4>
+                            {record ? (
+                              <span className="bg-green-200 text-green-800 px-2 py-0.5 rounded text-[10px] font-bold"><i className="fa-solid fa-check mr-1"></i> {record.time}</span>
+                            ) : (
+                              <span className="bg-red-200 text-red-800 px-2 py-0.5 rounded text-[10px] font-bold"><i className="fa-solid fa-xmark mr-1"></i> {t('absent')}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div>
-                <h3 className="text-lg font-bold text-slate-800 mb-4">{user.role === 'admin' ? t('allAtt') : t('attHistory')}</h3>
+                <h3 className="text-lg font-bold text-slate-800 mb-4">{user.role === 'admin' ? 'সকল উপস্থিতির ইতিহাস (All History)' : t('attHistory')}</h3>
                 <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
                   <table className="w-full text-left border-collapse">
                     <thead><tr className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200"><th className="p-4 font-bold">{t('photo')}</th><th className="p-4 font-bold">{t('name')}</th><th className="p-4 font-bold">{t('date')}</th><th className="p-4 font-bold">{t('time')}</th></tr></thead>
@@ -659,7 +735,8 @@
         }
 
         // --- STREAMING_CHUNK:Rendering Employees and Payments Views... ---
-        function EmployeesView({ users, addUser, deleteUser, t, lang }) {
+        function EmployeesView({ users, addUser, updateUser, deleteUser, t, lang }) {
+          const [editingId, setEditingId] = useState(null);
           const [name, setName] = useState('');
           const [loginId, setLoginId] = useState('');
           const [password, setPassword] = useState('');
@@ -667,19 +744,44 @@
 
           const submitUser = (e) => {
             e.preventDefault();
-            addUser({ id: Date.now(), name, loginId, password, designation, role: 'employee', avatar: null });
+            if (editingId) {
+                updateUser(editingId, { name, loginId, password, designation });
+                setEditingId(null);
+            } else {
+                addUser({ id: Date.now(), name, loginId, password, designation, role: 'employee', avatar: null });
+            }
             setName(''); setLoginId(''); setPassword(''); setDesignation('');
+          };
+
+          const handleEdit = (u) => {
+            setEditingId(u.id);
+            setName(u.name); setLoginId(u.loginId); setPassword(u.password); setDesignation(u.designation);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          };
+
+          const cancelEdit = () => {
+             setEditingId(null);
+             setName(''); setLoginId(''); setPassword(''); setDesignation('');
           };
 
           return (
             <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
               <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2"><i className="fa-solid fa-users-gear text-blue-500"></i> {t('employees')}</h2>
+              
               <form onSubmit={submitUser} className="mb-8 bg-slate-50 p-5 md:p-6 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
                 <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">{t('name')}</label><input required value={name} onChange={e=>setName(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Full Name" /></div>
                 <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">{t('loginID')}</label><input required value={loginId} onChange={e=>setLoginId(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Phone/Email" /></div>
                 <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">{t('password')}</label><input required value={password} onChange={e=>setPassword(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Password" /></div>
                 <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">{t('designation')}</label><input required value={designation} onChange={e=>setDesignation(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Technician" /></div>
-                <div className="md:col-span-2 mt-2"><button type="submit" className="w-full md:w-auto bg-blue-600 text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 font-bold shadow-lg active:scale-95 transition-all"><i className="fa-solid fa-user-plus mr-2"></i> {lang === 'bn' ? 'নতুন প্রোফাইল তৈরি করুন' : 'Create Profile'}</button></div>
+                <div className="md:col-span-2 mt-2 flex gap-3">
+                   <button type="submit" className="flex-1 md:flex-none bg-blue-600 text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 font-bold shadow-lg active:scale-95 transition-all">
+                     <i className={`fa-solid ${editingId ? 'fa-pen-to-square' : 'fa-user-plus'} mr-2`}></i> 
+                     {editingId ? t('editProfile') : (lang === 'bn' ? 'নতুন প্রোফাইল তৈরি করুন' : 'Create Profile')}
+                   </button>
+                   {editingId && (
+                     <button type="button" onClick={cancelEdit} className="px-6 py-3.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition-all">Cancel</button>
+                   )}
+                </div>
               </form>
 
               <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
@@ -691,7 +793,14 @@
                          <td className="p-4 font-bold text-slate-800 flex items-center gap-2">{u.avatar ? <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-xs font-bold">{u.name.charAt(0)}</div>} {u.name}</td>
                          <td className="p-4 text-blue-600 font-medium">{u.loginId}</td><td className="p-4 text-slate-500 font-mono text-sm">{u.password}</td><td className="p-4 text-slate-600 text-sm">{u.designation}</td>
                          <td className="p-4"><span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-600'}`}>{u.role}</span></td>
-                         <td className="p-4 text-center">{u.role !== 'admin' && <button onClick={() => {if(window.confirm('Delete Profile?')) deleteUser(u.id)}} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-trash-can text-sm"></i></button>}</td>
+                         <td className="p-4 text-center space-x-2">
+                           {u.role !== 'admin' && (
+                             <>
+                               <button onClick={() => handleEdit(u)} className="bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-pen text-sm"></i></button>
+                               <button onClick={() => {if(window.confirm('Delete Profile?')) deleteUser(u.id)}} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-trash-can text-sm"></i></button>
+                             </>
+                           )}
+                         </td>
                       </tr>
                     ))}
                   </tbody>
@@ -700,7 +809,12 @@
               <div className="md:hidden grid grid-cols-1 gap-4">
                  {users.map(u => (
                    <div key={u.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col relative">
-                      {u.role !== 'admin' && <button onClick={() => {if(window.confirm('Delete Profile?')) deleteUser(u.id)}} className="absolute top-4 right-4 text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button>}
+                      {u.role !== 'admin' && (
+                        <div className="absolute top-4 right-4 flex gap-2">
+                           <button onClick={() => handleEdit(u)} className="text-blue-400 hover:text-blue-600 p-2"><i className="fa-solid fa-pen"></i></button>
+                           <button onClick={() => {if(window.confirm('Delete Profile?')) deleteUser(u.id)}} className="text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button>
+                        </div>
+                      )}
                       <div className="flex items-center gap-3 mb-3 border-b border-slate-100 pb-3">{u.avatar ? <img src={u.avatar} className="w-12 h-12 rounded-full object-cover shadow-sm border border-slate-200" /> : <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xl shadow-sm">{u.name.charAt(0)}</div>}<div><h4 className="font-bold text-slate-800 text-base leading-tight">{u.name}</h4><span className={`inline-block mt-1 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-600'}`}>{u.role}</span></div></div>
                       <div className="text-sm space-y-1.5 text-slate-600"><div className="flex justify-between"><span className="text-slate-400 text-xs">ID:</span> <span className="font-medium text-blue-600">{u.loginId}</span></div><div className="flex justify-between"><span className="text-slate-400 text-xs">Pass:</span> <span className="font-mono bg-slate-100 px-1.5 rounded">{u.password}</span></div><div className="flex justify-between"><span className="text-slate-400 text-xs">Desig:</span> <span>{u.designation}</span></div></div>
                    </div>
