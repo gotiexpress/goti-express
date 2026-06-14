@@ -77,26 +77,53 @@
           return [storedValue, setStoredValue];
         }
 
-        // ২. Firestore Real-time Sync Hook (ডাটাবেস কানেকশন)
-        function useFirestore(collectionName, initialData = []) {
-            const [data, setData] = useState(initialData);
+        // ২. Hybrid Database Sync Hook (ফায়ারবেস এবং লোকাল স্টোরেজ একসাথে)
+        function useDatabase(collectionName, initialData = []) {
+            const [data, setData] = useState(() => {
+                const local = window.localStorage.getItem('goti_' + collectionName);
+                return local ? JSON.parse(local) : initialData;
+            });
 
             useEffect(() => {
                 const unsubscribe = db.collection(collectionName).orderBy('id', 'desc').onSnapshot(snapshot => {
                     const docs = snapshot.docs.map(doc => doc.data());
                     if (docs.length > 0) {
                         setData(docs);
+                        window.localStorage.setItem('goti_' + collectionName, JSON.stringify(docs));
                     } else if (initialData.length > 0) {
-                        // যদি ডাটাবেস একদম খালি থাকে, তবে প্রাথমিক ডেটা সেট করে দিবে (যেমন Admin User)
                         initialData.forEach(item => db.collection(collectionName).doc(item.id.toString()).set(item));
                     }
+                }, error => {
+                    console.error("Cloud Error:", error);
                 });
                 return () => unsubscribe();
             }, [collectionName]);
 
-            const addData = (newItem) => db.collection(collectionName).doc(newItem.id.toString()).set(newItem);
-            const updateData = (id, updatedFields) => db.collection(collectionName).doc(id.toString()).update(updatedFields);
-            const deleteData = (id) => db.collection(collectionName).doc(id.toString()).delete();
+            const addData = (newItem) => {
+                // সাথে সাথে মোবাইলে দেখানোর জন্য (Optimistic UI)
+                const newData = [newItem, ...data];
+                setData(newData);
+                window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData));
+
+                // ক্লাউডে সেভ করার কমান্ড
+                db.collection(collectionName).doc(newItem.id.toString()).set(newItem).catch(err => {
+                    alert("ফায়ারবেস রুলস (Rules) ঠিক করা নেই! দয়া করে ফায়ারবেস ডাটাবেস রুলস 'true' করুন।");
+                });
+            };
+
+            const updateData = (id, updatedFields) => {
+                const newData = data.map(item => item.id === id ? { ...item, ...updatedFields } : item);
+                setData(newData);
+                window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData));
+                db.collection(collectionName).doc(id.toString()).update(updatedFields);
+            };
+
+            const deleteData = (id) => {
+                const newData = data.filter(item => item.id !== id);
+                setData(newData);
+                window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData));
+                db.collection(collectionName).doc(id.toString()).delete();
+            };
 
             return [data, addData, updateData, deleteData];
         }
@@ -141,13 +168,12 @@
           const [currentView, setCurrentView] = useLocalStorage('goti_currentView', 'dashboard');
           const [sidebarOpen, setSidebarOpen] = useState(false);
 
-          // --- STREAMING_CHUNK:Connecting to Cloud Database... ---
-          // Database States (Connected to Firestore)
-          const [users, addUser, updateUser, deleteUser] = useFirestore('users', initialUsers);
-          const [attendances, addAttendance] = useFirestore('attendances', []);
-          const [expenses, addExpense, updateExpense, deleteExpense] = useFirestore('expenses', []);
-          const [reports, addReport] = useFirestore('reports', []);
-          const [payments, addPayment] = useFirestore('payments', []);
+          // Database States (Connected to Cloud & Local)
+          const [users, addUser, updateUser, deleteUser] = useDatabase('users', initialUsers);
+          const [attendances, addAttendance] = useDatabase('attendances', []);
+          const [expenses, addExpense, updateExpense, deleteExpense] = useDatabase('expenses', []);
+          const [reports, addReport] = useDatabase('reports', []);
+          const [payments, addPayment] = useDatabase('payments', []);
 
           const fontClass = lang === 'bn' ? "font-bn" : "";
 
