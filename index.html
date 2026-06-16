@@ -48,6 +48,9 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
+        // ==========================================
+        // 🔴 ফায়ারবেস ক্লাউড ডাটাবেস সেটআপ
+        // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyBmJGTuAvMF9FM6MwOSi4BZqFmGyqb2Yd0",
             authDomain: "goti-express.firebaseapp.com",
@@ -62,6 +65,9 @@
         }
         const db = firebase.firestore();
 
+        // ==========================================
+        // 🟢 কাস্টম হুকস (Custom Hooks)
+        // ==========================================
         function useLocalStorage(key, initialValue) {
           const [storedValue, setStoredValue] = useState(() => {
             try {
@@ -133,13 +139,16 @@
           { id: 2, name: 'স্বাধীন আহমেদ তামিম', loginId: '01813910850', password: '01813910850', role: 'employee', designation: 'Technician At Goti Express', avatar: null }
         ];
 
+        // ==========================================
+        // 🟡 Main App Component
+        // ==========================================
         function App() {
           const [isLoggedIn, setIsLoggedIn] = useLocalStorage('goti_isLoggedIn', false);
           const [currentUser, setCurrentUser] = useLocalStorage('goti_currentUser', null);
           const [currentView, setCurrentView] = useLocalStorage('goti_currentView', 'dashboard');
           const [sidebarOpen, setSidebarOpen] = useState(false);
 
-          // কাস্টম ডায়ালগ (পপ-আপ) স্টেট
+          // কাস্টম ডায়ালগ স্টেট
           const [dialog, setDialog] = useState({ open: false, type: '', msg: '', action: null, inputVal: '' });
           
           const showAlert = (msg) => setDialog({ open: true, type: 'alert', msg, action: null, inputVal: '' });
@@ -152,8 +161,9 @@
           const [expenses, addExpense, updateExpense, deleteExpense] = useDatabase('expenses', []);
           const [reports, addReport, updateReport, deleteReport] = useDatabase('reports', []);
           const [payments, addPayment] = useDatabase('payments', []);
-          const [salaries, addSalary, updateSalary, deleteSalary] = useDatabase('salaries', []);
+          const [salaries, addSalary, updateSalary, deleteSalary] = useDatabase('salaries', []); // নতুন বেতন কালেকশন
 
+          // Ensure currentUser updates if their profile is updated
           useEffect(() => {
               if (currentUser) {
                   const updatedMe = users.find(u => u.id === currentUser.id);
@@ -288,6 +298,9 @@
           );
         }
 
+        // ==========================================
+        // 🔵 Views Components
+        // ==========================================
         function DialogBox({ dialog, setDialog }) {
           return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -674,8 +687,9 @@
         }
 
         function ReportView({ user, reports, addReport, deleteReport, showConfirm }) {
-          const [customers, setCustomers] = useState(''); const [reportText, setReportText] = useState('');
-          const submitReport = (e) => { e.preventDefault(); addReport({ id: Date.now(), userId: user.id, userName: user.name, customers: parseInt(customers) || 0, reportText: reportText, date: new Date().toLocaleDateString('bn-BD') }); setCustomers(''); setReportText(''); };
+          const defaultReportFormat = `১. আজকের সম্পন্ন করা কাজসমূহ:\n- \n- \n\n২. অসমাপ্ত কাজ (যদি থাকে):\n- \n\n৩. বিশেষ মন্তব্য বা সমস্যা (যদি থাকে):\n- `;
+          const [customers, setCustomers] = useState(''); const [reportText, setReportText] = useState(defaultReportFormat);
+          const submitReport = (e) => { e.preventDefault(); addReport({ id: Date.now(), userId: user.id, userName: user.name, customers: parseInt(customers) || 0, reportText: reportText, date: new Date().toLocaleDateString('bn-BD') }); setCustomers(''); setReportText(defaultReportFormat); };
           const displayReports = user.role === 'admin' ? reports : reports.filter(r => r.userId === user.id);
 
           return (
@@ -705,6 +719,60 @@
           );
         }
 
+        function EmployeesView({ users, addUser, updateUser, deleteUser, showConfirm }) {
+          const [editingId, setEditingId] = useState(null);
+          const [name, setName] = useState(''); const [loginId, setLoginId] = useState(''); const [password, setPassword] = useState(''); const [designation, setDesignation] = useState('');
+
+          const submitUser = (e) => {
+            e.preventDefault();
+            if (editingId) { updateUser(editingId, { name, loginId, password, designation }); setEditingId(null); } 
+            else { addUser({ id: Date.now(), name, loginId, password, designation, role: 'employee', avatar: null }); }
+            setName(''); setLoginId(''); setPassword(''); setDesignation('');
+          };
+
+          const handleEdit = (u) => { setEditingId(u.id); setName(u.name); setLoginId(u.loginId); setPassword(u.password); setDesignation(u.designation); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+          const cancelEdit = () => { setEditingId(null); setName(''); setLoginId(''); setPassword(''); setDesignation(''); };
+
+          return (
+            <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
+              <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2"><i className="fa-solid fa-users-gear text-blue-500"></i> স্টাফ প্রোফাইল</h2>
+              <form onSubmit={submitUser} className="mb-8 bg-slate-50 p-5 md:p-6 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">নাম</label><input required value={name} onChange={e=>setName(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Full Name" /></div>
+                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">লগইন আইডি</label><input required value={loginId} onChange={e=>setLoginId(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Phone/Email" /></div>
+                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">পাসওয়ার্ড</label><input required value={password} onChange={e=>setPassword(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Password" /></div>
+                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">পদবী</label><input required value={designation} onChange={e=>setDesignation(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Technician" /></div>
+                <div className="md:col-span-2 mt-2 flex gap-3">
+                   <button type="submit" className="flex-1 md:flex-none bg-blue-600 text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 font-bold shadow-lg active:scale-95 transition-all"><i className={`fa-solid ${editingId ? 'fa-pen-to-square' : 'fa-user-plus'} mr-2`}></i> {editingId ? 'প্রোফাইল আপডেট' : 'নতুন প্রোফাইল তৈরি করুন'}</button>
+                   {editingId && <button type="button" onClick={cancelEdit} className="px-6 py-3.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition-all">Cancel</button>}
+                </div>
+              </form>
+              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
+                <table className="w-full text-left border-collapse">
+                  <thead><tr className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200"><th className="p-4 font-bold">নাম</th><th className="p-4 font-bold">লগইন আইডি</th><th className="p-4 font-bold">পাসওয়ার্ড</th><th className="p-4 font-bold">পদবী</th><th className="p-4 font-bold">রোল</th><th className="p-4 font-bold text-center">অ্যাকশন</th></tr></thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {users.map(u => (
+                      <tr key={u.id} className="hover:bg-slate-50 transition">
+                         <td className="p-4 font-bold text-slate-800 flex items-center gap-2">{u.avatar ? <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-xs font-bold">{u.name.charAt(0)}</div>} {u.name}</td>
+                         <td className="p-4 text-blue-600 font-medium">{u.loginId}</td><td className="p-4 text-slate-500 font-mono text-sm bg-slate-50/50 rounded">{u.password}</td><td className="p-4 text-slate-600 text-sm">{u.designation}</td><td className="p-4"><span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-600'}`}>{u.role === 'admin' ? 'এডমিন' : 'স্টাফ'}</span></td>
+                         <td className="p-4 text-center space-x-2">{u.role !== 'admin' && <><button onClick={() => handleEdit(u)} className="bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-pen text-sm"></i></button><button onClick={() => showConfirm('প্রোফাইলটি ডিলিট করতে চান?', () => deleteUser(u.id))} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-trash-can text-sm"></i></button></>}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="md:hidden grid grid-cols-1 gap-4">
+                 {users.map(u => (
+                   <div key={u.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col relative">
+                      {u.role !== 'admin' && <div className="absolute top-4 right-4 flex gap-2"><button onClick={() => handleEdit(u)} className="text-blue-400 hover:text-blue-600 p-2"><i className="fa-solid fa-pen"></i></button><button onClick={() => showConfirm('প্রোফাইলটি ডিলিট করতে চান?', () => deleteUser(u.id))} className="text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button></div>}
+                      <div className="flex items-center gap-3 mb-3 border-b border-slate-100 pb-3">{u.avatar ? <img src={u.avatar} className="w-12 h-12 rounded-full object-cover shadow-sm" /> : <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xl shadow-sm">{u.name.charAt(0)}</div>}<div><h4 className="font-bold text-slate-800 text-base leading-tight">{u.name}</h4><span className={`inline-block mt-1 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-600'}`}>{u.role === 'admin' ? 'এডমিন' : 'স্টাফ'}</span></div></div>
+                      <div className="text-sm space-y-1.5 text-slate-600"><div className="flex justify-between"><span className="text-slate-400 text-xs">ID:</span> <span className="font-medium text-blue-600">{u.loginId}</span></div><div className="flex justify-between"><span className="text-slate-400 text-xs">Pass:</span> <span className="font-mono bg-slate-100 px-1.5 rounded">{u.password}</span></div><div className="flex justify-between"><span className="text-slate-400 text-xs">Desig:</span> <span>{u.designation}</span></div></div>
+                   </div>
+                 ))}
+              </div>
+            </div>
+          );
+        }
+
         function SalaryView({ user, users, salaries, addSalary, updateSalary, deleteSalary, showAlert, showConfirm }) {
            const [editingSalId, setEditingSalId] = useState(null);
            const [empId, setEmpId] = useState(''); const [month, setMonth] = useState(''); const [baseSalary, setBaseSalary] = useState('');
@@ -716,7 +784,6 @@
               const emp = users.find(u => u.id.toString() === empId);
               if(!emp) return;
               
-              // Net = Base - Additions (Advance/Zoma) - Deductions
               const netSalary = (parseFloat(baseSalary)||0) - (parseFloat(additions)||0) - (parseFloat(deductions)||0);
 
               if (editingSalId) {
@@ -821,60 +888,6 @@
                  </div>
               </div>
            );
-        }
-
-        function EmployeesView({ users, addUser, updateUser, deleteUser, showConfirm }) {
-          const [editingId, setEditingId] = useState(null);
-          const [name, setName] = useState(''); const [loginId, setLoginId] = useState(''); const [password, setPassword] = useState(''); const [designation, setDesignation] = useState('');
-
-          const submitUser = (e) => {
-            e.preventDefault();
-            if (editingId) { updateUser(editingId, { name, loginId, password, designation }); setEditingId(null); } 
-            else { addUser({ id: Date.now(), name, loginId, password, designation, role: 'employee', avatar: null }); }
-            setName(''); setLoginId(''); setPassword(''); setDesignation('');
-          };
-
-          const handleEdit = (u) => { setEditingId(u.id); setName(u.name); setLoginId(u.loginId); setPassword(u.password); setDesignation(u.designation); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-          const cancelEdit = () => { setEditingId(null); setName(''); setLoginId(''); setPassword(''); setDesignation(''); };
-
-          return (
-            <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2"><i className="fa-solid fa-users-gear text-blue-500"></i> স্টাফ প্রোফাইল</h2>
-              <form onSubmit={submitUser} className="mb-8 bg-slate-50 p-5 md:p-6 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">নাম</label><input required value={name} onChange={e=>setName(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Full Name" /></div>
-                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">লগইন আইডি</label><input required value={loginId} onChange={e=>setLoginId(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Phone/Email" /></div>
-                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">পাসওয়ার্ড</label><input required value={password} onChange={e=>setPassword(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Password" /></div>
-                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">পদবী</label><input required value={designation} onChange={e=>setDesignation(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Technician" /></div>
-                <div className="md:col-span-2 mt-2 flex gap-3">
-                   <button type="submit" className="flex-1 md:flex-none bg-blue-600 text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 font-bold shadow-lg active:scale-95 transition-all"><i className={`fa-solid ${editingId ? 'fa-pen-to-square' : 'fa-user-plus'} mr-2`}></i> {editingId ? 'প্রোফাইল আপডেট' : 'নতুন প্রোফাইল তৈরি করুন'}</button>
-                   {editingId && <button type="button" onClick={cancelEdit} className="px-6 py-3.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition-all">Cancel</button>}
-                </div>
-              </form>
-              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-left border-collapse">
-                  <thead><tr className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200"><th className="p-4 font-bold">নাম</th><th className="p-4 font-bold">লগইন আইডি</th><th className="p-4 font-bold">পাসওয়ার্ড</th><th className="p-4 font-bold">পদবী</th><th className="p-4 font-bold">রোল</th><th className="p-4 font-bold text-center">অ্যাকশন</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {users.map(u => (
-                      <tr key={u.id} className="hover:bg-slate-50 transition">
-                         <td className="p-4 font-bold text-slate-800 flex items-center gap-2">{u.avatar ? <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-xs font-bold">{u.name.charAt(0)}</div>} {u.name}</td>
-                         <td className="p-4 text-blue-600 font-medium">{u.loginId}</td><td className="p-4 text-slate-500 font-mono text-sm bg-slate-50/50 rounded">{u.password}</td><td className="p-4 text-slate-600 text-sm">{u.designation}</td><td className="p-4"><span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-600'}`}>{u.role === 'admin' ? 'এডমিন' : 'স্টাফ'}</span></td>
-                         <td className="p-4 text-center space-x-2">{u.role !== 'admin' && <><button onClick={() => handleEdit(u)} className="bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-pen text-sm"></i></button><button onClick={() => showConfirm('প্রোফাইলটি ডিলিট করতে চান?', () => deleteUser(u.id))} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-trash-can text-sm"></i></button></>}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="md:hidden grid grid-cols-1 gap-4">
-                 {users.map(u => (
-                   <div key={u.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col relative">
-                      {u.role !== 'admin' && <div className="absolute top-4 right-4 flex gap-2"><button onClick={() => handleEdit(u)} className="text-blue-400 hover:text-blue-600 p-2"><i className="fa-solid fa-pen"></i></button><button onClick={() => showConfirm('প্রোফাইলটি ডিলিট করতে চান?', () => deleteUser(u.id))} className="text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button></div>}
-                      <div className="flex items-center gap-3 mb-3 border-b border-slate-100 pb-3">{u.avatar ? <img src={u.avatar} className="w-12 h-12 rounded-full object-cover shadow-sm" /> : <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xl shadow-sm">{u.name.charAt(0)}</div>}<div><h4 className="font-bold text-slate-800 text-base leading-tight">{u.name}</h4><span className={`inline-block mt-1 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-600'}`}>{u.role === 'admin' ? 'এডমিন' : 'স্টাফ'}</span></div></div>
-                      <div className="text-sm space-y-1.5 text-slate-600"><div className="flex justify-between"><span className="text-slate-400 text-xs">ID:</span> <span className="font-medium text-blue-600">{u.loginId}</span></div><div className="flex justify-between"><span className="text-slate-400 text-xs">Pass:</span> <span className="font-mono bg-slate-100 px-1.5 rounded">{u.password}</span></div><div className="flex justify-between"><span className="text-slate-400 text-xs">Desig:</span> <span>{u.designation}</span></div></div>
-                   </div>
-                 ))}
-              </div>
-            </div>
-          );
         }
 
         function PaymentsView({ users, payments, addPayment, expenses }) {
