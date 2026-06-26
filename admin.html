@@ -137,7 +137,7 @@
                 const local = window.localStorage.getItem('goti_' + collectionName);
                 if (local) {
                     let parsed = JSON.parse(local);
-                    if (['attendances','expenses','salaries','reports'].includes(collectionName)) {
+                    if (['attendances','expenses','salaries','reports','incomes'].includes(collectionName)) {
                         parsed = migrateDates(parsed, ['date']);
                     }
                     return parsed;
@@ -149,7 +149,7 @@
                 const unsubscribe = db.collection(collectionName).orderBy('id', 'desc').onSnapshot(snapshot => {
                     let docs = snapshot.docs.map(doc => doc.data());
                     if (docs.length > 0) {
-                        if (['attendances','expenses','salaries','reports'].includes(collectionName)) {
+                        if (['attendances','expenses','salaries','reports','incomes'].includes(collectionName)) {
                             docs = migrateDates(docs, ['date']);
                         }
                         setData(docs);
@@ -196,8 +196,8 @@
         };
 
         const initialUsers = [
-          { id: 1, name: 'Admin', loginId: 'sreebashkumar65@gmail.com', password: '01815151122', role: 'admin', designation: 'Administrator', avatar: null, canInvest: true, canApproveExp: true, canSubmitExp: true, canViewReports: true, canSubmitAttendance: true, canApproveLeave: true },
-          { id: 2, name: 'স্বাধীন আহমেদ তামিম', loginId: '01813910850', password: '01813910850', role: 'staff', designation: 'Technician', avatar: null, canInvest: false, canApproveExp: false, canSubmitExp: true, canViewReports: false, canSubmitAttendance: false, canApproveLeave: false }
+          { id: 1, name: 'Admin', loginId: 'sreebashkumar65@gmail.com', password: '01815151122', role: 'admin', designation: 'Administrator', avatar: null, canInvest: true, canApproveExp: true, canSubmitExp: true, canViewReports: true, canSubmitAttendance: true, canApproveLeave: true, canManageWebsite: true, canSubmitIncome: true },
+          { id: 2, name: 'স্বাধীন আহমেদ তামিম', loginId: '01813910850', password: '01813910850', role: 'staff', designation: 'Technician', avatar: null, canInvest: false, canApproveExp: false, canSubmitExp: true, canViewReports: false, canSubmitAttendance: false, canApproveLeave: false, canManageWebsite: false, canSubmitIncome: false }
         ];
 
         // ==========================================
@@ -223,6 +223,7 @@
           const [payments, addPaymentBase, updatePayment, deletePayment] = useDatabase('payments', []);
           const [salaries, addSalaryBase, updateSalary, deleteSalary] = useDatabase('salaries', []);
           const [investments, addInvestment, updateInvestment, deleteInvestment] = useDatabase('investments', []);
+          const [incomes, addIncome, updateIncome, deleteIncome] = useDatabase('incomes', []);
           const [logs, addLog, , ] = useDatabase('logs', []);
           
           // 🌐 Website Management Databases
@@ -230,6 +231,19 @@
           const [packages, addPackage, updatePackage, deletePackage] = useDatabase('packages', []);
           const [complaints, , , deleteComplaint] = useDatabase('complaints', []);
           const [reviews, , updateReview, deleteReview] = useDatabase('reviews', []);
+
+          // 🔴 New Notification Logic
+          const todayISO = formatDateISO(new Date());
+          const todayWeb = new Date().toLocaleDateString('en-GB'); // format used by website
+
+          const hasNewAttendance = attendances.some(a => a.date === todayISO);
+          const hasNewLeave = leaves.some(l => l.status === 'অপেক্ষমান');
+          const hasNewExp = expenses.some(e => e.status === 'অপেক্ষমান');
+          const hasNewReport = reports.some(r => r.date === todayISO);
+          const hasNewIncome = incomes.some(i => i.date === todayISO);
+          const hasNewPayment = payments.some(p => p.date === todayISO);
+          const hasNewInvestment = investments.some(i => i.date === todayISO);
+          const hasNewWeb = complaints.some(c => c.date === todayWeb) || reviews.some(r => r.date === todayWeb);
 
           const logAction = (action) => {
             if (!currentUser) return;
@@ -243,6 +257,7 @@
           const addSalaryWithLog = (item) => { addSalaryBase(item); logAction(`Added salary entry for ${item.userName}`); };
           const addPaymentWithLog = (item) => { addPaymentBase(item); logAction(`Recorded payment to ${item.userName}`); };
           const addInvestmentWithLog = (item) => { addInvestment(item); logAction(`Added investment of ৳${item.amount}`); };
+          const addIncomeWithLog = (item) => { addIncome(item); logAction(`Added income of ৳${item.amount}`); };
           const addUserWithLog = (item) => { addUser(item); logAction(`Added new staff: ${item.name}`); };
 
           useEffect(() => {
@@ -341,21 +356,23 @@
                     <SidebarItem icon="fa-house" label="ড্যাশবোর্ড" active={currentView === 'dashboard'} onClick={() => {setCurrentView('dashboard'); setSidebarOpen(false);}} />
                     {currentUser.role === 'admin' && <SidebarItem icon="fa-users" label="স্টাফ প্রোফাইল" active={currentView === 'employees'} onClick={() => {setCurrentView('employees'); setSidebarOpen(false);}} />}
                     
-                    {(currentUser.role === 'admin' || currentUser.canSubmitAttendance) && <SidebarItem icon="fa-user-check" label="উপস্থিতি" active={currentView === 'attendance'} onClick={() => {setCurrentView('attendance'); setSidebarOpen(false);}} />}
+                    {(currentUser.role === 'admin' || currentUser.canSubmitAttendance) && <SidebarItem icon="fa-user-check" label="উপস্থিতি" active={currentView === 'attendance'} hasNew={user.role==='admin' && hasNewAttendance} onClick={() => {setCurrentView('attendance'); setSidebarOpen(false);}} />}
                     
-                    <SidebarItem icon="fa-calendar-day" label="ছুটি" active={currentView === 'leave'} onClick={() => {setCurrentView('leave'); setSidebarOpen(false);}} />
+                    <SidebarItem icon="fa-calendar-day" label="ছুটি" active={currentView === 'leave'} hasNew={user.role==='admin' && hasNewLeave} onClick={() => {setCurrentView('leave'); setSidebarOpen(false);}} />
                     
-                    {(currentUser.role === 'admin' || currentUser.canSubmitExp !== false || currentUser.canApproveExp) && <SidebarItem icon="fa-money-bill-wave" label="যাতায়াত ও বিল" active={currentView === 'expenses'} onClick={() => {setCurrentView('expenses'); setSidebarOpen(false);}} />}
+                    {(currentUser.role === 'admin' || currentUser.canSubmitExp !== false || currentUser.canApproveExp) && <SidebarItem icon="fa-money-bill-wave" label="যাতায়াত ও বিল" active={currentView === 'expenses'} hasNew={user.role==='admin' && hasNewExp} onClick={() => {setCurrentView('expenses'); setSidebarOpen(false);}} />}
                     
-                    {(currentUser.role === 'admin' || currentUser.canViewReports) && <SidebarItem icon="fa-file-lines" label="ডেইলি রিপোর্ট" active={currentView === 'reports'} onClick={() => {setCurrentView('reports'); setSidebarOpen(false);}} />}
+                    {(currentUser.role === 'admin' || currentUser.canSubmitIncome) && <SidebarItem icon="fa-money-bill-trend-up" label="আয় (Income)" active={currentView === 'incomes'} hasNew={user.role==='admin' && hasNewIncome} onClick={() => {setCurrentView('incomes'); setSidebarOpen(false);}} />}
+
+                    {(currentUser.role === 'admin' || currentUser.canViewReports) && <SidebarItem icon="fa-file-lines" label="ডেইলি রিপোর্ট" active={currentView === 'reports'} hasNew={user.role==='admin' && hasNewReport} onClick={() => {setCurrentView('reports'); setSidebarOpen(false);}} />}
                     
                     <SidebarItem icon="fa-sack-dollar" label="বেতন" active={currentView === 'salary'} onClick={() => {setCurrentView('salary'); setSidebarOpen(false);}} />
-                    <SidebarItem icon="fa-wallet" label="পেমেন্ট" active={currentView === 'payments'} onClick={() => {setCurrentView('payments'); setSidebarOpen(false);}} />
+                    <SidebarItem icon="fa-wallet" label="পেমেন্ট" active={currentView === 'payments'} hasNew={user.role==='admin' && hasNewPayment} onClick={() => {setCurrentView('payments'); setSidebarOpen(false);}} />
                     
-                    {(currentUser.role === 'admin' || currentUser.canInvest) && <SidebarItem icon="fa-chart-line" label="ইনভেস্টমেন্ট" active={currentView === 'investments'} onClick={() => {setCurrentView('investments'); setSidebarOpen(false);}} />}
+                    {(currentUser.role === 'admin' || currentUser.canInvest) && <SidebarItem icon="fa-chart-line" label="ইনভেস্টমেন্ট" active={currentView === 'investments'} hasNew={user.role==='admin' && hasNewInvestment} onClick={() => {setCurrentView('investments'); setSidebarOpen(false);}} />}
                     
                     {/* 🌐 Website Management Menu */}
-                    {currentUser.role === 'admin' && <SidebarItem icon="fa-globe" label="ওয়েবসাইট কন্ট্রোল" active={currentView === 'website'} onClick={() => {setCurrentView('website'); setSidebarOpen(false);}} />}
+                    {(currentUser.role === 'admin' || currentUser.canManageWebsite) && <SidebarItem icon="fa-globe" label="ওয়েবসাইট কন্ট্রোল" active={currentView === 'website'} hasNew={user.role==='admin' && hasNewWeb} onClick={() => {setCurrentView('website'); setSidebarOpen(false);}} />}
 
                     {currentUser.role === 'admin' && <SidebarItem icon="fa-clipboard-list" label="লগ" active={currentView === 'logs'} onClick={() => {setCurrentView('logs'); setSidebarOpen(false);}} />}
                   </nav>
@@ -368,7 +385,7 @@
 
               <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
                 <header className="hidden md:flex h-16 bg-[#0f172a] text-white items-center justify-between px-6 shrink-0 shadow-md z-10">
-                  <div className="flex items-center space-x-2 text-sm text-blue-300"><i className="fa-solid fa-house text-xs"></i> <span>›</span> <span className="text-blue-100 font-medium capitalize">{currentView === 'employees' ? 'স্টাফ প্রোফাইল' : currentView === 'attendance' ? 'উপস্থিতি' : currentView === 'leave' ? 'ছুটি' : currentView === 'expenses' ? 'যাতায়াত ও অন্যান্য বিল' : currentView === 'reports' ? 'ডেইলি রিপোর্ট' : currentView === 'salary' ? 'বেতন' : currentView === 'payments' ? 'পেমেন্ট' : currentView === 'investments' ? 'ইনভেস্টমেন্ট' : currentView === 'website' ? 'ওয়েবসাইট কন্ট্রোল' : currentView === 'logs' ? 'লগ' : 'ড্যাশবোর্ড'}</span></div>
+                  <div className="flex items-center space-x-2 text-sm text-blue-300"><i className="fa-solid fa-house text-xs"></i> <span>›</span> <span className="text-blue-100 font-medium capitalize">{currentView === 'employees' ? 'স্টাফ প্রোফাইল' : currentView === 'attendance' ? 'উপস্থিতি' : currentView === 'leave' ? 'ছুটি' : currentView === 'expenses' ? 'যাতায়াত ও অন্যান্য বিল' : currentView === 'incomes' ? 'আয় (Income)' : currentView === 'reports' ? 'ডেইলি রিপোর্ট' : currentView === 'salary' ? 'বেতন' : currentView === 'payments' ? 'পেমেন্ট' : currentView === 'investments' ? 'ইনভেস্টমেন্ট' : currentView === 'website' ? 'ওয়েবসাইট কন্ট্রোল' : currentView === 'logs' ? 'লগ' : 'ড্যাশবোর্ড'}</span></div>
                   <div className="flex items-center space-x-5">
                     <div className="flex items-center space-x-3 pl-5">
                       <div className="text-right"><p className="text-sm font-medium text-blue-50 leading-tight">{currentUser.name}</p><p className="text-xs text-blue-400 capitalize">{currentUser.role === 'admin' ? 'এডমিন' : 'স্টাফ'}</p></div>
@@ -378,7 +395,7 @@
                 </header>
 
                 <header className="md:hidden h-14 bg-[#0f172a] text-white flex items-center justify-between px-4 shrink-0 shadow-md z-10">
-                  <div className="flex items-center gap-2"><img src="https://i.ibb.co.com/4Zy9b057/black-goti.png" alt="Logo" className="h-6 object-contain bg-white rounded px-1" /><span className="font-bold text-blue-100 capitalize">{currentView === 'employees' ? 'স্টাফ' : currentView === 'attendance' ? 'উপস্থিতি' : currentView === 'leave' ? 'ছুটি' : currentView === 'expenses' ? 'বিল' : currentView === 'reports' ? 'রিপোর্ট' : currentView === 'salary' ? 'বেতন' : currentView === 'payments' ? 'পেমেন্ট' : currentView === 'investments' ? 'ইনভেস্টমেন্ট' : currentView === 'website' ? 'ওয়েবসাইট কন্ট্রোল' : currentView === 'logs' ? 'লগ' : 'ড্যাশবোর্ড'}</span></div>
+                  <div className="flex items-center gap-2"><img src="https://i.ibb.co.com/4Zy9b057/black-goti.png" alt="Logo" className="h-6 object-contain bg-white rounded px-1" /><span className="font-bold text-blue-100 capitalize">{currentView === 'employees' ? 'স্টাফ' : currentView === 'attendance' ? 'উপস্থিতি' : currentView === 'leave' ? 'ছুটি' : currentView === 'expenses' ? 'বিল' : currentView === 'incomes' ? 'আয়' : currentView === 'reports' ? 'রিপোর্ট' : currentView === 'salary' ? 'বেতন' : currentView === 'payments' ? 'পেমেন্ট' : currentView === 'investments' ? 'ইনভেস্টমেন্ট' : currentView === 'website' ? 'ওয়েবসাইট কন্ট্রোল' : currentView === 'logs' ? 'লগ' : 'ড্যাশবোর্ড'}</span></div>
                 </header>
 
                 <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#e2e8f0] p-4 pb-24 md:pb-6 sm:p-6 lg:p-8">
@@ -387,6 +404,10 @@
                     {currentView === 'attendance' && (currentUser.role === 'admin' || currentUser.canSubmitAttendance) && <AttendanceView user={currentUser} attendances={attendances} addAttendance={addAttendanceWithLog} users={users} showAlert={showAlert} logAction={logAction} />}
                     {currentView === 'leave' && <LeaveView user={currentUser} leaves={leaves} addLeave={addLeaveWithLog} updateLeave={updateLeave} deleteLeave={deleteLeave} showConfirm={showConfirm} logAction={logAction} />}
                     {currentView === 'expenses' && (currentUser.role === 'admin' || currentUser.canSubmitExp !== false || currentUser.canApproveExp) && <ExpenseView user={currentUser} expenses={expenses} addExpense={addExpenseWithLog} updateExpense={updateExpense} deleteExpense={deleteExpense} showConfirm={showConfirm} showPrompt={showPrompt} showAlert={showAlert} logAction={logAction} />}
+                    
+                    {/* 🟢 New Income View */}
+                    {currentView === 'incomes' && (currentUser.role === 'admin' || currentUser.canSubmitIncome) && <IncomeView user={currentUser} incomes={incomes} addIncome={addIncomeWithLog} updateIncome={updateIncome} deleteIncome={deleteIncome} showConfirm={showConfirm} showAlert={showAlert} logAction={logAction} />}
+
                     {currentView === 'reports' && (currentUser.role === 'admin' || currentUser.canViewReports) && <ReportView user={currentUser} reports={reports} addReport={addReportWithLog} deleteReport={deleteReport} showConfirm={showConfirm} showAlert={showAlert} logAction={logAction} />}
                     {currentView === 'salary' && <SalaryView user={currentUser} users={users} salaries={salaries} addSalary={addSalaryWithLog} updateSalary={updateSalary} deleteSalary={deleteSalary} showAlert={showAlert} showConfirm={showConfirm} logAction={logAction} />}
                     {currentView === 'employees' && currentUser.role === 'admin' && <EmployeesView users={users} addUser={addUserWithLog} updateUser={updateUser} deleteUser={deleteUser} showConfirm={showConfirm} showAlert={showAlert} logAction={logAction} />}
@@ -394,7 +415,7 @@
                     {currentView === 'investments' && (currentUser.role === 'admin' || currentUser.canInvest) && <InvestView user={currentUser} investments={investments} addInvestment={addInvestmentWithLog} updateInvestment={updateInvestment} deleteInvestment={deleteInvestment} showConfirm={showConfirm} showAlert={showAlert} logAction={logAction} />}
                     
                     {/* 🌐 Website Settings View */}
-                    {currentView === 'website' && currentUser.role === 'admin' && <WebsiteSettingsView config={webConfig[0] || {id: 1, adsStatus: false, popupUrl: '', banners: []}} updateConfig={updateConfig} packages={packages} addPackage={addPackage} updatePackage={updatePackage} deletePackage={deletePackage} complaints={complaints} deleteComplaint={deleteComplaint} reviews={reviews} updateReview={updateReview} deleteReview={deleteReview} showAlert={showAlert} showConfirm={showConfirm} logAction={logAction} />}
+                    {currentView === 'website' && (currentUser.role === 'admin' || currentUser.canManageWebsite) && <WebsiteSettingsView config={webConfig[0] || {id: 1, adsStatus: false, popupUrl: '', banners: []}} updateConfig={updateConfig} packages={packages} addPackage={addPackage} updatePackage={updatePackage} deletePackage={deletePackage} complaints={complaints} deleteComplaint={deleteComplaint} reviews={reviews} updateReview={updateReview} deleteReview={deleteReview} showAlert={showAlert} showConfirm={showConfirm} logAction={logAction} />}
 
                     {currentView === 'logs' && currentUser.role === 'admin' && <LogsView logs={logs} />}
                   </div>
@@ -404,11 +425,12 @@
                   <BottomNavItem icon="fa-house" label="ড্যাশবোর্ড" active={currentView === 'dashboard'} onClick={() => setCurrentView('dashboard')} />
                   
                   {(currentUser.role === 'admin' || currentUser.canSubmitAttendance) && (
-                    <BottomNavItem icon="fa-user-check" label="উপস্থিতি" active={currentView === 'attendance'} onClick={() => setCurrentView('attendance')} />
+                    <BottomNavItem icon="fa-user-check" label="উপস্থিতি" active={currentView === 'attendance'} hasNew={user.role==='admin' && hasNewAttendance} onClick={() => setCurrentView('attendance')} />
                   )}
                   
                   <div className="relative -top-5">
-                    <button onClick={() => setCurrentView((currentUser.role === 'admin' || currentUser.canViewReports) ? 'reports' : 'expenses')} className="w-14 h-14 bg-gradient-to-r from-[#2d1960] to-[#5e3186] rounded-full flex flex-col items-center justify-center text-white shadow-lg shadow-purple-500/40 border-4 border-[#e2e8f0] active:scale-95 transition-transform"><i className={`fa-solid ${(currentUser.role === 'admin' || currentUser.canViewReports) ? 'fa-file-lines' : 'fa-money-bill-wave'} text-xl`}></i></button>
+                    <button onClick={() => setCurrentView((currentUser.role === 'admin' || currentUser.canSubmitIncome) ? 'incomes' : 'expenses')} className="w-14 h-14 bg-gradient-to-r from-[#2d1960] to-[#5e3186] rounded-full flex flex-col items-center justify-center text-white shadow-lg shadow-purple-500/40 border-4 border-[#e2e8f0] active:scale-95 transition-transform"><i className={`fa-solid ${(currentUser.role === 'admin' || currentUser.canSubmitIncome) ? 'fa-money-bill-trend-up' : 'fa-money-bill-wave'} text-xl`}></i></button>
+                    {user.role === 'admin' && hasNewIncome && <span className="absolute right-0 top-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>}
                   </div>
                   
                   <BottomNavItem icon="fa-sack-dollar" label="বেতন" active={currentView === 'salary'} onClick={() => setCurrentView('salary')} />
@@ -417,6 +439,200 @@
               </div>
             </div>
           );
+        }
+
+        // ==========================================
+        // 🔵 COMPONENTS
+        // ==========================================
+        
+        function DialogBox({ dialog, setDialog }) {
+          return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+              <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-up text-center">
+                  <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${dialog.type === 'alert' ? 'bg-red-100 text-red-500' : dialog.type === 'confirm' ? 'bg-orange-100 text-orange-500' : 'bg-blue-100 text-blue-500'}`}>
+                      <i className={`fa-solid text-3xl ${dialog.type === 'alert' ? 'fa-triangle-exclamation' : dialog.type === 'confirm' ? 'fa-question' : 'fa-info'}`}></i>
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-4">{dialog.msg}</h3>
+                  {dialog.type === 'prompt' && (
+                      <input type="text" autoFocus value={dialog.inputVal} onChange={e => setDialog({...dialog, inputVal: e.target.value})} className="w-full border border-slate-300 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="এখানে লিখুন..." />
+                  )}
+                  <div className="flex justify-center gap-3 mt-4">
+                      {dialog.type === 'confirm' && <button onClick={() => setDialog({open: false})} className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition">বাতিল</button>}
+                      <button onClick={() => { dialog.action && dialog.action(dialog.inputVal); setDialog({open: false}); }} className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition">ঠিক আছে</button>
+                  </div>
+              </div>
+            </div>
+          );
+        }
+
+        function SidebarItem({ icon, label, active, onClick, hasNew }) {
+          return (
+            <button onClick={onClick} className={`relative w-full flex items-center px-4 py-3.5 mb-1.5 text-sm rounded-xl transition-all duration-200 font-bold ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
+              <i className={`fa-solid ${icon} w-6 text-center mr-3 text-lg ${active ? 'text-white' : 'text-blue-400'}`}></i> {label}
+              {hasNew && <span className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-red-500 rounded-full shadow-[0_0_8px_rgba(239,68,68,0.8)] animate-pulse"></span>}
+            </button>
+          );
+        }
+
+        function BottomNavItem({ icon, label, active, onClick, hasNew }) {
+          return (
+            <button onClick={onClick} className={`relative flex flex-col items-center justify-center w-16 h-full transition-colors ${active ? 'text-blue-600' : 'text-slate-400'}`}>
+              <i className={`fa-solid ${icon} text-xl mb-1 ${active ? 'animate-bounce-short' : ''}`}></i><span className={`text-[10px] font-semibold tracking-wide ${active ? 'font-bold' : ''}`}>{label}</span>
+              {hasNew && <span className="absolute right-4 top-2 w-2 h-2 bg-red-500 rounded-full"></span>}
+            </button>
+          );
+        }
+
+        function DashboardView({ user, updateUser }) {
+          const handleAvatarUpload = (e) => {
+            const file = e.target.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onloadend = () => updateUser({ ...user, avatar: reader.result });
+              reader.readAsDataURL(file);
+            }
+          };
+
+          return (
+            <div className="space-y-6">
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative group">
+                <div className="bg-gradient-to-r from-[#1e293b] to-[#0f172a] h-24 md:h-32 relative flex justify-center">
+                   <div className="absolute -bottom-10 md:-bottom-12 w-24 h-24 md:w-28 md:h-28 bg-white rounded-2xl md:rounded-xl border-4 border-white overflow-hidden flex items-center justify-center shadow-lg group">
+                      {user.avatar ? <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" /> : <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1e293b&color=fff&size=120`} alt="Profile" />}
+                      <label className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center cursor-pointer text-white flex-col transition-all"><i className="fa-solid fa-camera text-xl"></i><input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" /></label>
+                   </div>
+                </div>
+                <div className="pt-14 md:pt-16 pb-5 md:pb-6 text-center border-b border-slate-100 px-4">
+                  <h3 className="text-xl md:text-2xl font-bold text-slate-800">{user.name}</h3><p className="text-sm text-slate-500 mt-0.5">{user.loginId}</p>
+                </div>
+                <div className="p-4 md:p-5 flex-1 bg-slate-50/50">
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="flex flex-col text-slate-700 bg-white p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm items-center text-center"><i className="fa-solid fa-briefcase text-blue-500 mb-2 text-lg"></i><p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">পদবী</p><p className="font-bold text-xs md:text-sm">{user.designation}</p></div>
+                    <div className="flex flex-col text-slate-700 bg-white p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm items-center text-center"><i className="fa-solid fa-shield-halved text-blue-500 mb-2 text-lg"></i><p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">রোল</p><p className="font-bold text-xs md:text-sm capitalize">{user.role === 'admin' ? 'এডমিন' : 'স্টাফ'}</p></div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden"><div className="bg-blue-600 text-white p-3 text-center font-bold text-lg md:text-xl"><RealTimeClock /></div><div className="flex-1 flex items-center justify-center p-6 bg-slate-50"><AnalogClock /></div></div>
+                <div className="bg-[#1e293b] text-white rounded-2xl shadow-lg p-5 md:p-6 border border-slate-700 overflow-hidden"><MiniCalendar /></div>
+              </div>
+            </div>
+          );
+        }
+
+        function IncomeView({ user, incomes, addIncome, updateIncome, deleteIncome, showConfirm, showAlert, logAction }) {
+            const [editingId, setEditingId] = useState(null);
+            const [amount, setAmount] = useState('');
+            const [source, setSource] = useState('Product Sales');
+            const [details, setDetails] = useState('');
+            const [incDate, setIncDate] = useState(() => formatDateISO(new Date()));
+            
+            const [filterMonth, setFilterMonth] = useState(() => {
+                const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+            });
+
+            const submitIncome = (e) => {
+                e.preventDefault();
+                if(editingId) {
+                    updateIncome(editingId, { amount: parseFloat(amount), source, details, date: incDate });
+                    logAction(`Updated income ${editingId}`);
+                    setEditingId(null); showAlert('আয় আপডেট হয়েছে!');
+                } else {
+                    addIncome({ id: Date.now(), userId: user.id, userName: user.name, amount: parseFloat(amount), source, details, date: incDate, timestamp: getCurrentTimeStr() });
+                    showAlert('আয় সফলভাবে যুক্ত হয়েছে!');
+                }
+                setAmount(''); setDetails(''); setIncDate(formatDateISO(new Date()));
+            };
+
+            const handleEdit = (inc) => {
+                setEditingId(inc.id); setAmount(inc.amount); setSource(inc.source); setDetails(inc.details); setIncDate(inc.date);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            // Calculations based on filterMonth
+            const filteredIncomes = incomes.filter(i => i.date && i.date.startsWith(filterMonth));
+            const totalIncome = filteredIncomes.reduce((sum, i) => sum + (i.amount || 0), 0);
+            
+            const sourceTotals = {
+                'CCTV Work': 0, 'Product Sales': 0, 'Digital Marketing': 0, 'Graphics Design': 0, 'অন্যান্য (Others)': 0
+            };
+            filteredIncomes.forEach(i => {
+                if(sourceTotals[i.source] !== undefined) sourceTotals[i.source] += i.amount;
+                else sourceTotals['অন্যান্য (Others)'] += i.amount;
+            });
+
+            return (
+                <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-8">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-100 pb-4 gap-4">
+                        <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
+                            <i className="fa-solid fa-money-bill-trend-up text-green-600"></i> মাসিক আয়
+                        </h2>
+                        <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                            <label className="text-xs font-bold text-slate-600">মাস নির্বাচন:</label>
+                            <input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="bg-transparent text-sm font-bold text-blue-700 outline-none cursor-pointer" />
+                        </div>
+                    </div>
+
+                    {/* Dashboard Cards */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div className="bg-green-50 border border-green-200 p-6 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-center">
+                            <i className="fa-solid fa-sack-dollar absolute -right-6 -bottom-6 text-green-500/20 text-9xl"></i>
+                            <p className="text-green-800 text-sm font-bold uppercase mb-2">এই মাসের মোট আয়</p>
+                            <p className="text-4xl md:text-5xl font-black text-green-600">৳{totalIncome.toLocaleString()}</p>
+                        </div>
+                        <div className="lg:col-span-2 bg-slate-50 border border-slate-200 p-6 rounded-2xl shadow-sm">
+                            <h4 className="text-sm font-bold text-slate-600 uppercase mb-4 border-b pb-2">খাতভিত্তিক আয় (Source Breakdown)</h4>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm"><p className="text-xs text-slate-500 font-bold mb-1">CCTV Work</p><p className="font-bold text-slate-800 text-lg">৳{sourceTotals['CCTV Work'].toLocaleString()}</p></div>
+                                <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm"><p className="text-xs text-slate-500 font-bold mb-1">Product Sales</p><p className="font-bold text-slate-800 text-lg">৳{sourceTotals['Product Sales'].toLocaleString()}</p></div>
+                                <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm"><p className="text-xs text-slate-500 font-bold mb-1">Digital Mkt.</p><p className="font-bold text-slate-800 text-lg">৳{sourceTotals['Digital Marketing'].toLocaleString()}</p></div>
+                                <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm"><p className="text-xs text-slate-500 font-bold mb-1">Graphics Design</p><p className="font-bold text-slate-800 text-lg">৳{sourceTotals['Graphics Design'].toLocaleString()}</p></div>
+                                <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm"><p className="text-xs text-slate-500 font-bold mb-1">অন্যান্য</p><p className="font-bold text-slate-800 text-lg">৳{sourceTotals['অন্যান্য (Others)'].toLocaleString()}</p></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Add Income Form */}
+                    <form onSubmit={submitIncome} className="bg-blue-50/50 p-5 md:p-6 rounded-2xl border border-blue-100 grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-5 items-end">
+                        <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">তারিখ</label><input type="date" required value={incDate} onChange={e=>setIncDate(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white" /></div>
+                        <div>
+                            <label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">আয়ের উৎস (Source)</label>
+                            <select value={source} onChange={e=>setSource(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                <option value="Product Sales">Product Sales</option>
+                                <option value="CCTV Work">CCTV Work</option>
+                                <option value="Digital Marketing">Digital Marketing</option>
+                                <option value="Graphics Design">Graphics Design</option>
+                                <option value="অন্যান্য (Others)">অন্যান্য (Others)</option>
+                            </select>
+                        </div>
+                        <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">পরিমাণ (৳)</label><div className="relative"><span className="absolute left-4 top-3.5 text-slate-400 font-bold">৳</span><input type="number" required value={amount} onChange={e=>setAmount(e.target.value)} className="w-full pl-8 pr-4 py-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00" /></div></div>
+                        <div className="md:col-span-3"><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">বিস্তারিত বিবরণ (Optional)</label><input value={details} onChange={e=>setDetails(e.target.value)} className="w-full px-4 py-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="কাস্টমারের নাম বা অন্যান্য বিবরণ লিখুন..." /></div>
+                        
+                        <div className="md:col-span-4 mt-2 flex gap-3">
+                            <button type="submit" className="w-full md:w-auto bg-green-600 text-white px-8 py-3.5 rounded-xl hover:bg-green-700 font-bold shadow-lg active:scale-95 transition-all"><i className={`fa-solid ${editingId ? 'fa-check' : 'fa-plus'} mr-2`}></i> {editingId ? 'আপডেট করুন' : 'আয় এন্ট্রি করুন'}</button>
+                            {editingId && <button type="button" onClick={()=>{setEditingId(null); setAmount(''); setDetails('');}} className="px-6 py-3.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition-all">বাতিল</button>}
+                        </div>
+                    </form>
+
+                    {/* Income History Table */}
+                    <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
+                        <table className="w-full text-left border-collapse">
+                            <thead><tr className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200"><th className="p-4 font-bold">তারিখ</th><th className="p-4 font-bold">এন্ট্রি করেছেন</th><th className="p-4 font-bold">উৎস</th><th className="p-4 font-bold">বিবরণ</th><th className="p-4 font-bold text-right">পরিমাণ</th>{user.role === 'admin' && <th className="p-4 font-bold text-center">অ্যাকশন</th>}</tr></thead>
+                            <tbody className="divide-y divide-slate-100">{filteredIncomes.length === 0 ? <tr><td colSpan={user.role === 'admin' ? 6 : 5} className="p-8 text-center text-slate-400 font-medium">এই মাসে কোনো রেকর্ড পাওয়া যায়নি</td></tr> : filteredIncomes.map(inc => (<tr key={inc.id} className="hover:bg-slate-50 transition"><td className="p-4 text-slate-500 font-medium">{formatDateEn(new Date(inc.date))}</td><td className="p-4 font-bold text-slate-800">{inc.userName}</td><td className="p-4"><span className="bg-blue-50 text-blue-600 border border-blue-100 px-2 py-1 rounded text-xs font-bold">{inc.source}</span></td><td className="p-4 text-slate-600 text-sm">{inc.details || '-'}</td><td className="p-4 font-black text-green-600 text-lg text-right">৳ {inc.amount.toLocaleString()}</td>{user.role === 'admin' && <td className="p-4 text-center space-x-2"><button onClick={() => handleEdit(inc)} className="bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-pen text-sm"></i></button><button onClick={() => showConfirm('ডিলিট করতে চান?', () => { deleteIncome(inc.id); logAction(`Deleted income ${inc.id}`); })} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-trash-can text-sm"></i></button></td>}</tr>))}</tbody>
+                        </table>
+                    </div>
+                    <div className="md:hidden grid grid-cols-1 gap-3">
+                        {filteredIncomes.length === 0 ? <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">এই মাসে কোনো রেকর্ড পাওয়া যায়নি</div> : filteredIncomes.map(inc => (
+                        <div key={inc.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col relative">
+                            {user.role === 'admin' && <div className="absolute top-4 right-4 flex gap-2"><button onClick={() => handleEdit(inc)} className="text-blue-400 hover:text-blue-600 p-2"><i className="fa-solid fa-pen"></i></button><button onClick={() => showConfirm('ডিলিট করতে চান?', () => { deleteIncome(inc.id); logAction(`Deleted income ${inc.id}`); })} className="text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button></div>}
+                            <div className="mb-2 pr-16"><div className="text-xs text-slate-500 mb-1.5"><i className="fa-regular fa-calendar mr-1"></i> {formatDateEn(new Date(inc.date))} (By: {inc.userName})</div><span className="bg-blue-50 text-blue-600 border border-blue-100 text-[10px] font-bold px-2 py-0.5 rounded-md mb-2 inline-block">{inc.source}</span><div className="text-sm text-slate-700 leading-tight">{inc.details}</div></div>
+                            <div className="font-black text-green-600 text-xl mt-2 border-t border-slate-100 pt-2 text-right">৳{inc.amount.toLocaleString()}</div>
+                        </div>
+                        ))}
+                    </div>
+                </div>
+            );
         }
 
         // ==========================================
@@ -474,13 +690,11 @@
 
             return (
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
-                    {/* Header */}
                     <div className="bg-gradient-to-r from-[#2d1960] to-[#5e3186] p-6 text-white">
-                        <h2 className="text-2xl font-bold flex items-center gap-3"><i className="fa-solid fa-globe text-purple-300"></i> ওয়েবসাইট কন্ট্রোল প্যানেল</h2>
-                        <p className="text-purple-200 text-sm mt-1">পাবলিক ওয়েবসাইট gotiexpress.com এর ডিজাইন ও ডেটা এখান থেকে নিয়ন্ত্রণ করুন</p>
+                        <h2 className="text-2xl font-bold flex items-center gap-3"><i className="fa-solid fa-globe text-purple-300"></i> ওয়েবসাইট কন্ট্রোল প্যানেল</h2>
+                        <p className="text-purple-200 text-sm mt-1">পাবলিক ওয়েবসাইট gotiexpress.com এর ডিজাইন ও ডেটা এখান থেকে নিয়ন্ত্রণ করুন</p>
                     </div>
 
-                    {/* Tabs */}
                     <div className="flex overflow-x-auto bg-slate-50 border-b border-slate-200 scrollbar-hide">
                         <button onClick={()=>setActiveTab('general')} className={`px-6 py-4 text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'general' ? 'border-[#5e3186] text-[#2d1960]' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}><i className="fa-solid fa-gear mr-2"></i> ব্যানার ও অ্যাডস</button>
                         <button onClick={()=>setActiveTab('packages')} className={`px-6 py-4 text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'packages' ? 'border-[#5e3186] text-[#2d1960]' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}><i className="fa-solid fa-wifi mr-2"></i> প্যাকেজ সমূহ</button>
@@ -489,10 +703,8 @@
                     </div>
 
                     <div className="p-6 md:p-8">
-                        {/* TAB 1: General Settings */}
                         {activeTab === 'general' && (
                             <div className="space-y-10 animate-fade-in-up">
-                                {/* Popup Ads */}
                                 <div>
                                     <h3 className="text-lg font-bold text-[#2d1960] mb-4 border-b border-purple-100 pb-2"><i className="fa-solid fa-bullhorn mr-2 text-[#5e3186]"></i> পপ-আপ অ্যাডস (Popup Ads)</h3>
                                     <div className="bg-purple-50 border border-purple-100 p-5 rounded-2xl flex flex-col md:flex-row gap-5 items-start md:items-center">
@@ -512,7 +724,6 @@
                                     </div>
                                 </div>
 
-                                {/* Banner Management */}
                                 <div>
                                     <h3 className="text-lg font-bold text-[#2d1960] mb-4 border-b border-purple-100 pb-2"><i className="fa-solid fa-images mr-2 text-[#5e3186]"></i> হোমপেজ স্লাইডার ব্যানার</h3>
                                     <div className="flex flex-col md:flex-row gap-3 mb-6">
@@ -520,7 +731,7 @@
                                         <button onClick={addBanner} className="bg-[#5e3186] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#2d1960] transition-colors"><i className="fa-solid fa-plus mr-2"></i> ব্যানার যোগ করুন</button>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {(!config.banners || config.banners.length === 0) && <p className="text-slate-500 text-sm">কোনো ব্যানার যুক্ত করা নেই। ডিফল্ট কালার ওয়েবসাইটের হোমপেজে দেখাবে।</p>}
+                                        {(!config.banners || config.banners.length === 0) && <p className="text-slate-500 text-sm">কোনো ব্যানার যুক্ত করা নেই। ডিফল্ট কালার ওয়েবসাইটের হোমপেজে দেখাবে।</p>}
                                         {config.banners?.map((url, i) => (
                                             <div key={i} className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm group aspect-video bg-slate-100">
                                                 <img src={url} alt={`Banner ${i+1}`} className="w-full h-full object-cover" />
@@ -534,14 +745,13 @@
                             </div>
                         )}
 
-                        {/* TAB 2: Packages */}
                         {activeTab === 'packages' && (
                             <div className="animate-fade-in-up">
                                 <form onSubmit={submitPackage} className="bg-purple-50 p-6 rounded-2xl border border-purple-100 mb-8 grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
                                     <div><label className="block text-xs font-bold text-slate-700 mb-2">প্যাকেজের নাম</label><input required value={pkgName} onChange={e=>setPkgName(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-[#5e3186] outline-none bg-white" placeholder="e.g. Basic Plan" /></div>
                                     <div><label className="block text-xs font-bold text-slate-700 mb-2">স্পিড (Mbps)</label><input required value={pkgSpeed} onChange={e=>setPkgSpeed(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-[#5e3186] outline-none bg-white" placeholder="e.g. 5 Mbps" /></div>
                                     <div><label className="block text-xs font-bold text-slate-700 mb-2">মূল্য (৳)</label><input type="number" required value={pkgPrice} onChange={e=>setPkgPrice(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-[#5e3186] outline-none bg-white" placeholder="e.g. 500" /></div>
-                                    <div className="md:col-span-2"><label className="block text-xs font-bold text-slate-700 mb-2">সুবিধাসমূহ (কমা দিয়ে লিখুন)</label><input required value={pkgFeatures} onChange={e=>setPkgFeatures(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-[#5e3186] outline-none bg-white" placeholder="e.g. YouTube Free, BDIX, 24/7 Support" /></div>
+                                    <div className="md:col-span-2"><label className="block text-xs font-bold text-slate-700 mb-2">সুবিধাসমূহ (কমা দিয়ে লিখুন)</label><input required value={pkgFeatures} onChange={e=>setPkgFeatures(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-[#5e3186] outline-none bg-white" placeholder="e.g. YouTube Free, BDIX, 24/7 Support" /></div>
                                     <button type="submit" className="bg-[#2d1960] text-white p-3 rounded-xl font-bold hover:bg-[#5e3186] transition-colors"><i className="fa-solid fa-plus mr-2"></i> প্যাকেজ যোগ করুন</button>
                                 </form>
 
@@ -562,7 +772,6 @@
                             </div>
                         )}
 
-                        {/* TAB 3: Complaints */}
                         {activeTab === 'complaints' && (
                             <div className="animate-fade-in-up">
                                 <div className="space-y-4">
@@ -581,7 +790,6 @@
                             </div>
                         )}
 
-                        {/* TAB 4: Reviews */}
                         {activeTab === 'reviews' && (
                             <div className="animate-fade-in-up">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -599,982 +807,6 @@
                             </div>
                         )}
                     </div>
-                </div>
-            );
-        }
-
-        // ==========================================
-        // 🔵 Existing Components (DialogBox, Dashboard, Attendance, Leave, Expense, Report, Salary, Employees, Payments, Invest, Logs, Clocks, Calendar)
-        // ==========================================
-        
-        function DialogBox({ dialog, setDialog }) {
-          return (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
-              <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-fade-in-up text-center">
-                  <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4 ${dialog.type === 'alert' ? 'bg-red-100 text-red-500' : dialog.type === 'confirm' ? 'bg-orange-100 text-orange-500' : 'bg-blue-100 text-blue-500'}`}>
-                      <i className={`fa-solid text-3xl ${dialog.type === 'alert' ? 'fa-triangle-exclamation' : dialog.type === 'confirm' ? 'fa-question' : 'fa-info'}`}></i>
-                  </div>
-                  <h3 className="text-lg font-bold text-slate-800 mb-4">{dialog.msg}</h3>
-                  {dialog.type === 'prompt' && (
-                      <input type="text" autoFocus value={dialog.inputVal} onChange={e => setDialog({...dialog, inputVal: e.target.value})} className="w-full border border-slate-300 p-3 rounded-xl mb-4 focus:ring-2 focus:ring-blue-500 outline-none" placeholder="এখানে লিখুন..." />
-                  )}
-                  <div className="flex justify-center gap-3 mt-4">
-                      {dialog.type === 'confirm' && <button onClick={() => setDialog({open: false})} className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition">বাতিল</button>}
-                      <button onClick={() => { dialog.action && dialog.action(dialog.inputVal); setDialog({open: false}); }} className="px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition">ঠিক আছে</button>
-                  </div>
-              </div>
-            </div>
-          );
-        }
-
-        function SidebarItem({ icon, label, active, onClick }) {
-          return (
-            <button onClick={onClick} className={`w-full flex items-center px-4 py-3.5 mb-1.5 text-sm rounded-xl transition-all duration-200 font-bold ${active ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}>
-              <i className={`fa-solid ${icon} w-6 text-center mr-3 text-lg ${active ? 'text-white' : 'text-blue-400'}`}></i> {label}
-            </button>
-          );
-        }
-
-        function BottomNavItem({ icon, label, active, onClick }) {
-          return (
-            <button onClick={onClick} className={`flex flex-col items-center justify-center w-16 h-full transition-colors ${active ? 'text-blue-600' : 'text-slate-400'}`}>
-              <i className={`fa-solid ${icon} text-xl mb-1 ${active ? 'animate-bounce-short' : ''}`}></i><span className={`text-[10px] font-semibold tracking-wide ${active ? 'font-bold' : ''}`}>{label}</span>
-            </button>
-          );
-        }
-
-        function DashboardView({ user, updateUser }) {
-          const handleAvatarUpload = (e) => {
-            const file = e.target.files[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onloadend = () => updateUser({ ...user, avatar: reader.result });
-              reader.readAsDataURL(file);
-            }
-          };
-
-          return (
-            <div className="space-y-6">
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col relative group">
-                <div className="bg-gradient-to-r from-[#1e293b] to-[#0f172a] h-24 md:h-32 relative flex justify-center">
-                   <div className="absolute -bottom-10 md:-bottom-12 w-24 h-24 md:w-28 md:h-28 bg-white rounded-2xl md:rounded-xl border-4 border-white overflow-hidden flex items-center justify-center shadow-lg group">
-                      {user.avatar ? <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" /> : <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=1e293b&color=fff&size=120`} alt="Profile" />}
-                      <label className="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center cursor-pointer text-white flex-col transition-all"><i className="fa-solid fa-camera text-xl"></i><input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" /></label>
-                   </div>
-                </div>
-                <div className="pt-14 md:pt-16 pb-5 md:pb-6 text-center border-b border-slate-100 px-4">
-                  <h3 className="text-xl md:text-2xl font-bold text-slate-800">{user.name}</h3><p className="text-sm text-slate-500 mt-0.5">{user.loginId}</p>
-                </div>
-                <div className="p-4 md:p-5 flex-1 bg-slate-50/50">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="flex flex-col text-slate-700 bg-white p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm items-center text-center"><i className="fa-solid fa-briefcase text-blue-500 mb-2 text-lg"></i><p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">পদবী</p><p className="font-bold text-xs md:text-sm">{user.designation}</p></div>
-                    <div className="flex flex-col text-slate-700 bg-white p-3 md:p-4 rounded-xl border border-slate-100 shadow-sm items-center text-center"><i className="fa-solid fa-shield-halved text-blue-500 mb-2 text-lg"></i><p className="text-[10px] text-slate-400 font-bold uppercase mb-0.5">রোল</p><p className="font-bold text-xs md:text-sm capitalize">{user.role === 'admin' ? 'এডমিন' : 'স্টাফ'}</p></div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col overflow-hidden"><div className="bg-blue-600 text-white p-3 text-center font-bold text-lg md:text-xl"><RealTimeClock /></div><div className="flex-1 flex items-center justify-center p-6 bg-slate-50"><AnalogClock /></div></div>
-                <div className="bg-[#1e293b] text-white rounded-2xl shadow-lg p-5 md:p-6 border border-slate-700 overflow-hidden"><MiniCalendar /></div>
-              </div>
-            </div>
-          );
-        }
-
-        function AttendanceView({ user, attendances, addAttendance, users, showAlert, logAction }) {
-          const videoRef = useRef(null);
-          const canvasRef = useRef(null);
-          const [cameraActive, setCameraActive] = useState(false);
-          const [cameraError, setCameraError] = useState('');
-          const [userLoc, setUserLoc] = useState(null);
-          const [locError, setLocError] = useState(false);
-          
-          const [showAllHist, setShowAllHist] = useState(false);
-
-          const [selectedEmpForCalendar, setSelectedEmpForCalendar] = useState('');
-          const [calendarMonth, setCalendarMonth] = useState(() => {
-              const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-          });
-          const [histMonth, setHistMonth] = useState(() => {
-              const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-          });
-
-          useEffect(() => {
-            if (user.role === 'staff' || user.role === 'employee' || user.canSubmitAttendance) {
-               startCamera();
-               getLocation();
-            }
-            return () => stopCamera();
-          }, [user.role, user.canSubmitAttendance]);
-
-          const getLocation = () => {
-             setLocError(false);
-             if(navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                  pos => { setUserLoc(`${pos.coords.latitude},${pos.coords.longitude}`); setLocError(false); },
-                  err => { console.log('Loc err:', err); setLocError(true); }, {enableHighAccuracy: true}
-                );
-             } else {
-                setLocError(true);
-             }
-          }
-
-          const startCamera = async () => {
-            try {
-              const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
-              if (videoRef.current) { videoRef.current.srcObject = stream; setCameraActive(true); setCameraError(''); }
-            } catch (err) { setCameraError('ক্যামেরা চালু করা সম্ভব হয়নি।'); }
-          };
-
-          const stopCamera = () => {
-            if (videoRef.current && videoRef.current.srcObject) { videoRef.current.srcObject.getTracks().forEach(track => track.stop()); setCameraActive(false); }
-          };
-
-          const captureAndSubmit = () => {
-            if (!videoRef.current || !cameraActive || !userLoc) {
-               if(!userLoc) setLocError(true);
-               return;
-            }
-            const video = videoRef.current; const canvas = canvasRef.current; const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            
-            const photoDataUrl = canvas.toDataURL('image/jpeg', 0.3);
-            const currentTime = formatTimeEn(new Date());
-            const currentDateISO = formatDateISO(new Date());
-            const locLink = `http://maps.google.com/?q=${userLoc}`;
-
-            addAttendance({ id: Date.now(), userId: user.id, userName: user.name, date: currentDateISO, time: currentTime, photo: photoDataUrl, location: locLink });
-            
-            const btn = document.getElementById('submit-att-btn');
-            if(btn) {
-              const originalText = btn.innerHTML;
-              btn.innerHTML = `<i class="fa-solid fa-check mr-2"></i> সফল হয়েছে!`;
-              btn.classList.add('!bg-green-600');
-              setTimeout(() => { btn.innerHTML = originalText; btn.classList.remove('!bg-green-600'); }, 2000);
-            }
-          };
-
-          const myAttendances = user.role === 'admin' ? attendances : attendances.filter(a => a.userId === user.id);
-          const allEmployees = users ? users.filter(u => u.role !== 'admin' && u.canSubmitAttendance) : []; 
-
-          // History filtering by selected month
-          const filteredByMonth = myAttendances.filter(a => a.date && a.date.startsWith(histMonth));
-          const displayRecords = showAllHist ? filteredByMonth : filteredByMonth.slice(0, 7);
-
-          const todayISO = formatDateISO(new Date());
-
-          return (
-            <div className="bg-white md:p-8 p-5 rounded-2xl border border-slate-200 shadow-sm">
-              <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2">
-                <i className="fa-solid fa-user-check text-blue-500"></i> উপস্থিতি
-              </h2>
-              
-              {user.role !== 'admin' && user.canSubmitAttendance && (
-                <div className="mb-8 md:mb-10 bg-slate-50 p-4 md:p-6 rounded-2xl border border-slate-200">
-                  <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-                    <div className="w-full md:w-1/2 max-w-[280px] mx-auto md:mx-0">
-                      <div className="relative rounded-2xl overflow-hidden border-4 border-slate-800 bg-black aspect-[3/4] flex items-center justify-center shadow-xl">
-                        <video ref={videoRef} autoPlay playsInline muted className={`w-full h-full object-cover ${cameraActive ? 'block' : 'hidden'}`} style={{ transform: 'scaleX(-1)' }} />
-                        {!cameraActive && <div className="text-slate-500 flex flex-col items-center text-center p-6"><i className="fa-solid fa-video-slash text-5xl mb-3 opacity-40"></i><p className="text-xs md:text-sm font-medium">{cameraError || 'লাইভ ক্যামেরা (সেলফি)'}</p>{cameraError && <button onClick={startCamera} className="mt-4 px-5 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md">Retry</button>}</div>}
-                      </div>
-                      <canvas ref={canvasRef} className="hidden"></canvas>
-                    </div>
-
-                    <div className="flex-1 space-y-4 md:space-y-6 w-full text-center md:text-left">
-                      <div className="hidden md:block">
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">লাইভ ক্যামেরা (সেলফি)</h3>
-                        <p className="text-slate-600 bg-blue-50 p-4 rounded-xl border border-blue-100">ক্যামেরার দিকে তাকিয়ে সাবমিট বাটনে ক্লিক করুন। আপনার বর্তমান ছবি, তারিখ, সময় ও লোকেশন সেভ হবে।</p>
-                      </div>
-                      
-                      {locError && (
-                         <div className="bg-red-50 border border-red-200 p-3 rounded-xl flex items-start gap-2 text-left animate-pulse">
-                            <i className="fa-solid fa-triangle-exclamation text-red-500 mt-1"></i>
-                            <div>
-                               <p className="text-sm font-bold text-red-600">লোকেশন (GPS) বন্ধ আছে!</p>
-                               <p className="text-xs text-red-500">অবশ্যই লোকেশন অন করতে হবে, তা না হলে উপস্থিতি দেওয়া যাবে না। লোকেশন অন করে চেক বাটনে চাপ দিন।</p>
-                               <button onClick={getLocation} className="mt-2 bg-red-100 text-red-600 px-3 py-1 rounded text-xs font-bold hover:bg-red-200">চেক লোকেশন</button>
-                            </div>
-                         </div>
-                      )}
-
-                      <button id="submit-att-btn" onClick={captureAndSubmit} disabled={!cameraActive || locError} className={`w-full py-4 rounded-2xl text-base md:text-lg font-bold flex items-center justify-center transition-all shadow-lg ${cameraActive && !locError ? 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}><i className="fa-solid fa-camera mr-2 text-xl"></i> উপস্থিতি সাবমিট করুন</button>
-                      {userLoc && !locError && <div className="text-xs text-green-600 font-bold flex items-center justify-center md:justify-start mt-2"><i className="fa-solid fa-location-dot mr-1"></i> লোকেশন ট্র্যাক করা হয়েছে</div>}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Admin Today's Attendance Cards */}
-              {user.role === 'admin' && (
-                  <div className="mb-8">
-                      <h3 className="text-lg font-bold text-slate-800 mb-4 bg-slate-100 p-3 rounded-lg border border-slate-200">
-                          <i className="fa-solid fa-calendar-check mr-2 text-blue-600"></i> আজকের উপস্থিতি - <span className="text-blue-600">{formatDateEn(new Date(todayISO))}</span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {allEmployees.map(emp => {
-                              const records = attendances.filter(a => a.userId === emp.id && a.date === todayISO).sort((a,b) => b.id - a.id);
-                              const latestRecord = records[0];
-                              return (
-                                  <div key={emp.id} className={`p-4 rounded-2xl border shadow-sm flex items-center gap-4 ${records.length > 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                                      {latestRecord ? <img src={latestRecord.photo} className="w-12 h-12 rounded-xl object-cover border border-green-300 shadow-sm" style={{ transform: 'scaleX(-1)' }} /> : <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-red-400 shadow-sm"><i className="fa-solid fa-user-xmark text-xl"></i></div>}
-                                      <div className="flex-1">
-                                          <h4 className="font-bold text-slate-800 text-sm leading-tight mb-1">{emp.name}</h4>
-                                          {records.length > 0 ? (
-                                              <div className="flex flex-wrap gap-1">
-                                                  {records.map(r => <span key={r.id} className="bg-green-200 text-green-800 px-2 py-0.5 rounded text-[10px] font-bold"><i className="fa-solid fa-check mr-0.5"></i>{r.time}</span>)}
-                                              </div>
-                                          ) : (<span className="bg-red-200 text-red-800 px-2 py-0.5 rounded text-[10px] font-bold"><i className="fa-solid fa-xmark mr-1"></i> অনুপস্থিত</span>)}
-                                      </div>
-                                  </div>
-                              );
-                          })}
-                      </div>
-                  </div>
-              )}
-
-              {/* History Table */}
-              <div>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-                   <h3 className="text-lg font-bold text-slate-800">{user.role === 'admin' ? 'সকল স্টাফের উপস্থিতির ইতিহাস' : 'আপনার উপস্থিতির ইতিহাস'}</h3>
-                   <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100">
-                      <label className="text-xs font-bold text-blue-800">Month:</label>
-                      <input type="month" value={histMonth} onChange={e => { setHistMonth(e.target.value); setShowAllHist(false); }} className="bg-transparent text-sm font-bold text-blue-700 outline-none cursor-pointer" />
-                   </div>
-                </div>
-
-                <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
-                  <table className="w-full text-left border-collapse">
-                    <thead><tr className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200"><th className="p-4 font-bold">ছবি</th><th className="p-4 font-bold">নাম</th><th className="p-4 font-bold">তারিখ</th><th className="p-4 font-bold">সময়</th><th className="p-4 font-bold">লোকেশন</th></tr></thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {displayRecords.length === 0 ? <tr><td colSpan="5" className="p-8 text-center text-slate-400 font-medium">কোনো রেকর্ড পাওয়া যায়নি</td></tr> : 
-                        displayRecords.map(record => (
-                          <tr key={record.id} className="hover:bg-slate-50 transition"><td className="p-4"><img src={record.photo} alt="Selfie" className="w-12 h-12 rounded-xl object-cover border border-slate-200" style={{ transform: 'scaleX(-1)' }} /></td><td className="p-4 font-bold text-slate-800">{record.userName}</td><td className="p-4 text-slate-600 font-medium">{formatDateEn(new Date(record.date))}</td><td className="p-4"><span className="inline-block bg-green-50 text-green-700 px-3 py-1 rounded-lg text-xs font-bold border border-green-200">{record.time}</span></td><td className="p-4">{record.location ? <a href={record.location} target="_blank" className="text-blue-500 hover:text-blue-700 text-xs font-bold bg-blue-50 px-2 py-1 rounded"><i className="fa-solid fa-map-location-dot mr-1"></i> ম্যাপে দেখুন</a> : <span className="text-slate-400 text-xs">N/A</span>}</td></tr>
-                        ))}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="md:hidden grid grid-cols-1 gap-3">
-                   {displayRecords.length === 0 ? <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">কোনো রেকর্ড পাওয়া যায়নি</div> :
-                     displayRecords.map(record => (
-                       <div key={record.id} className="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
-                          <img src={record.photo} alt="Selfie" className="w-16 h-16 rounded-xl object-cover border border-slate-100 shadow-sm" style={{ transform: 'scaleX(-1)' }} />
-                          <div className="flex-1">
-                             <h4 className="font-bold text-slate-800 text-sm mb-1 leading-tight">{record.userName}</h4>
-                             <div className="flex flex-wrap items-center gap-2 text-[10px]">
-                               <span className="text-slate-500"><i className="fa-regular fa-calendar mr-1"></i>{formatDateEn(new Date(record.date))}</span>
-                               <span className="bg-green-100 text-green-700 px-2 py-0.5 rounded font-bold">{record.time}</span>
-                               {record.location && <a href={record.location} target="_blank" className="bg-blue-100 text-blue-700 px-2 py-0.5 rounded font-bold"><i className="fa-solid fa-map-location-dot"></i> ম্যাপ</a>}
-                             </div>
-                          </div>
-                       </div>
-                     ))}
-                </div>
-                
-                {!showAllHist && filteredByMonth.length > 7 && (
-                   <button onClick={() => setShowAllHist(true)} className="w-full mt-4 py-3 bg-slate-100 hover:bg-slate-200 text-blue-600 font-bold rounded-xl transition text-sm">আরও দেখুন (See More)</button>
-                )}
-              </div>
-
-              {/* মাসিক উপস্থিতি/অনুপস্থিতি ক্যালেন্ডার (Admin Only) */}
-              {user.role === 'admin' && (
-                  <div className="mt-10 pt-8 border-t border-slate-200">
-                      <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                          <i className="fa-solid fa-calendar-days text-blue-500"></i> স্টাফের মাসিক উপস্থিতি ক্যালেন্ডার
-                      </h3>
-                      
-                      <div className="flex flex-col md:flex-row gap-4 mb-6 bg-slate-50 p-5 rounded-2xl border border-slate-200">
-                          <div className="flex-1">
-                              <label className="block text-xs font-bold text-slate-700 mb-2">স্টাফ নির্বাচন করুন</label>
-                              <select value={selectedEmpForCalendar} onChange={e => setSelectedEmpForCalendar(e.target.value)} className="w-full border border-slate-300 p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-white">
-                                  <option value="">-- স্টাফ সিলেক্ট করুন --</option>
-                                  {allEmployees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
-                              </select>
-                          </div>
-                          <div className="flex-1">
-                              <label className="block text-xs font-bold text-slate-700 mb-2">মাস নির্বাচন করুন</label>
-                              <input type="month" value={calendarMonth} onChange={e => setCalendarMonth(e.target.value)} className="w-full border border-slate-300 p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
-                          </div>
-                      </div>
-
-                      {selectedEmpForCalendar ? (
-                          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                              {(() => {
-                                  if (!calendarMonth) return null;
-                                  const [y, m] = calendarMonth.split('-').map(Number);
-                                  const daysInMonth = new Date(y, m, 0).getDate();
-                                  const firstDay = new Date(y, m - 1, 1).getDay();
-
-                                  const empAtts = attendances.filter(a => a.userId.toString() === selectedEmpForCalendar);
-                                  const hasAttendance = (day) => {
-                                      const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`; 
-                                      return empAtts.some(a => a.date === dateStr);
-                                  };
-
-                                  const today = new Date();
-                                  const isCurrentMonth = today.getFullYear() === y && (today.getMonth() + 1) === m;
-                                  const currentDay = today.getDate();
-                                  
-                                  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                                  const days = [];
-                                  for(let d = 1; d <= daysInMonth; d++) {
-                                      const isFuture = isCurrentMonth && d > currentDay;
-                                      const isFutureMonth = (y > today.getFullYear()) || (y === today.getFullYear() && m > (today.getMonth() + 1));
-                                      const isFutureDate = isFutureMonth || isFuture;
-                                      
-                                      const isPresent = hasAttendance(d);
-                                      days.push({ day: d, isPresent, isFutureDate });
-                                  }
-
-                                  return (
-                                      <div className="grid grid-cols-7 gap-px bg-slate-200">
-                                          {dayNames.map(d => <div key={d} className="bg-slate-100 text-center py-2 text-xs font-bold text-slate-500 uppercase">{d}</div>)}
-                                          {Array(firstDay).fill(null).map((_, i) => <div key={`e-${i}`} className="bg-white p-4"></div>)}
-                                          {days.map(d => (
-                                              <div key={d.day} className="bg-white p-2 md:p-4 flex flex-col items-center justify-center border-t border-slate-50 min-h-[70px]">
-                                                  <span className="text-sm font-bold text-slate-700 mb-1">{d.day}</span>
-                                                  {!d.isFutureDate ? (
-                                                      d.isPresent ? 
-                                                      <span className="bg-green-100 text-green-700 text-[10px] md:text-xs font-bold px-2 py-0.5 rounded uppercase">উপস্থিত</span> : 
-                                                      <span className="bg-red-100 text-red-600 text-[10px] md:text-xs font-bold px-2 py-0.5 rounded uppercase">অনুপস্থিত</span>
-                                                  ) : (
-                                                      <span className="text-slate-300 text-[10px]">—</span>
-                                                  )}
-                                              </div>
-                                          ))}
-                                      </div>
-                                  );
-                              })()}
-                          </div>
-                      ) : (
-                          <div className="text-center p-8 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-500 font-medium">
-                              ক্যালেন্ডার দেখতে উপরের তালিকা থেকে একজন স্টাফ নির্বাচন করুন
-                          </div>
-                      )}
-                  </div>
-              )}
-            </div>
-          );
-        }
-
-        function LeaveView({ user, leaves, addLeave, updateLeave, deleteLeave, showConfirm, logAction }) {
-          const [startDate, setStartDate] = useState(''); const [endDate, setEndDate] = useState(''); const [reason, setReason] = useState('');
-          
-          const submitLeave = (e) => { 
-             e.preventDefault(); 
-             const newLeave = { id: Date.now(), userId: user.id, userName: user.name, startDate, endDate, reason, requestDate: formatDateISO(new Date()), status: 'অপেক্ষমান' };
-             addLeave(newLeave);
-             setStartDate(''); setEndDate(''); setReason(''); 
-          };
-          
-          const canApproveLeave = user.role === 'admin' || user.canApproveLeave;
-          const displayLeaves = canApproveLeave ? leaves : leaves.filter(l => l.userId === user.id);
-
-          const handleApprove = (leave) => {
-              updateLeave(leave.id, { status: 'অনুমোদিত', approvedAt: getCurrentTimeStr(), approvedBy: user.designation });
-              logAction(`Approved leave for ${leave.userName}`);
-          };
-          const handleReject = (leave) => {
-              updateLeave(leave.id, { status: 'বাতিল', rejectedAt: getCurrentTimeStr(), rejectedBy: user.designation });
-              logAction(`Rejected leave for ${leave.userName}`);
-          };
-
-          return (
-            <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2"><i className="fa-solid fa-calendar-day text-blue-500"></i> ছুটি</h2>
-              
-              {user.role !== 'admin' && (
-                <form onSubmit={submitLeave} className="mb-8 bg-blue-50/50 p-5 md:p-6 rounded-2xl border border-blue-100 grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">শুরুর তারিখ</label><input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required /></div>
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">শেষ তারিখ</label><input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required /></div>
-                  <div className="md:col-span-2"><label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">ছুটির কারণ</label><textarea value={reason} onChange={e => setReason(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none h-24 resize-none" required placeholder="ছুটির বিস্তারিত কারণ লিখুন..."></textarea></div>
-                  <div className="md:col-span-2 mt-2"><button type="submit" className="w-full md:w-auto bg-blue-600 text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 font-bold shadow-lg active:scale-95 transition-all"><i className="fa-solid fa-paper-plane mr-2"></i> ছুটির আবেদন</button></div>
-                </form>
-              )}
-
-              <div className="space-y-4">
-                {displayLeaves.length === 0 ? <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">কোনো রেকর্ড পাওয়া যায়নি</div> :
-                  displayLeaves.sort((a,b) => b.id - a.id).map(leave => (
-                    <div key={leave.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative">
-                      {user.role === 'admin' && (
-                          <div className="absolute top-4 right-4 flex gap-2">
-                             <button onClick={() => showConfirm('আপনি কি এই রেকর্ডটি ডিলিট করতে চান?', () => { deleteLeave(leave.id); logAction(`Deleted leave of ${leave.userName}`); })} className="text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button>
-                          </div>
-                      )}
-                      
-                      <div className="flex justify-between items-start mb-2 pr-12">
-                         <span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md"><i className="fa-regular fa-calendar mr-1"></i> Requested: {formatDateEn(new Date(leave.requestDate))}</span>
-                         <div className="text-right">
-                             <span className={`px-2 py-0.5 text-[10px] rounded-md font-bold uppercase tracking-wider border ${leave.status === 'অনুমোদিত' ? 'bg-green-50 text-green-700 border-green-200' : leave.status === 'বাতিল' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>{leave.status}</span>
-                             {leave.approvedAt && <div className="text-[9px] text-blue-600 mt-1 font-semibold whitespace-nowrap"><i className="fa-regular fa-clock"></i> {leave.approvedAt} {leave.approvedBy && `(${leave.approvedBy})`}</div>}
-                             {leave.rejectedAt && <div className="text-[9px] text-red-600 mt-1 font-semibold whitespace-nowrap"><i className="fa-regular fa-clock"></i> {leave.rejectedAt} {leave.rejectedBy && `(${leave.rejectedBy})`}</div>}
-                         </div>
-                      </div>
-                      
-                      {canApproveLeave && <div className="text-sm font-bold text-blue-600 mb-2">{leave.userName}</div>}
-                      <div className="text-sm text-slate-800 font-bold mb-1">Date: {formatDateEn(new Date(leave.startDate))} to {formatDateEn(new Date(leave.endDate))}</div>
-                      <div className="text-sm text-slate-600 mb-4 bg-slate-50 p-3 rounded-lg border border-slate-100">{leave.reason}</div>
-                      
-                      {canApproveLeave && leave.status === 'অপেক্ষমান' && (
-                          <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-                              <button onClick={() => handleApprove(leave)} className="flex-1 bg-green-50 text-green-600 hover:bg-green-600 hover:text-white py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"><i className="fa-solid fa-check"></i> Approve</button>
-                              <button onClick={() => handleReject(leave)} className="flex-1 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white py-2 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1"><i className="fa-solid fa-xmark"></i> Reject</button>
-                          </div>
-                      )}
-                    </div>
-                  ))
-                }
-              </div>
-            </div>
-          );
-        }
-
-        function ExpenseView({ user, expenses, addExpense, updateExpense, deleteExpense, showConfirm, showPrompt, showAlert, logAction }) {
-          const [amount, setAmount] = useState(''); const [desc, setDesc] = useState(''); const [category, setCategory] = useState('travel');
-          const [editExpId, setEditExpId] = useState(null);
-          const [editCat, setEditCat] = useState(''); const [editAmt, setEditAmt] = useState(''); const [editDesc, setEditDesc] = useState('');
-          const [editDate, setEditDate] = useState(''); const [editStatus, setEditStatus] = useState('');
-
-          const canApprove = user.role === 'admin' || user.canApproveExp;
-          const canSubmit = user.role !== 'admin' && user.canSubmitExp !== false;
-
-          const submitExpense = (e) => {
-            e.preventDefault();
-            const newExp = { id: Date.now(), userId: user.id, userName: user.name, category, amount: parseFloat(amount), description: desc, date: formatDateISO(new Date()), status: 'অপেক্ষমান', rejectReason: '' };
-            addExpense(newExp);
-            setAmount(''); setDesc(''); setCategory('travel'); showAlert('বিল জমা হয়েছে!');
-          };
-
-          const handleEditExp = (exp) => {
-              setEditExpId(exp.id); setEditCat(exp.category); setEditAmt(exp.amount); setEditDesc(exp.description); setEditDate(exp.date); setEditStatus(exp.status);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-          };
-
-          const submitEditExp = (e) => {
-              e.preventDefault();
-              updateExpense(editExpId, { category: editCat, amount: parseFloat(editAmt), description: editDesc, date: editDate, status: editStatus });
-              logAction(`Updated expense ${editExpId}`);
-              setEditExpId(null); showAlert('বিল আপডেট হয়েছে!');
-          };
-
-          const handleReject = (id) => {
-             showPrompt('বাতিল করার কারণ লিখুন:', (reason) => {
-               if(reason) { 
-                   updateExpense(id, { status: 'বাতিল', rejectReason: reason, rejectedAt: getCurrentTimeStr(), rejectedBy: user.designation }); 
-                   logAction(`Rejected expense ${id}`);
-               }
-             });
-          };
-
-          const handleApprove = (id) => {
-              updateExpense(id, {status: 'অনুমোদিত', approvedAt: getCurrentTimeStr(), approvedBy: user.designation});
-              logAction(`Approved expense ${id}`);
-          };
-          const handleMarkPaid = (id) => {
-              updateExpense(id, {status: 'পেইড', paidAt: getCurrentTimeStr(), paidBy: user.designation});
-              logAction(`Marked expense ${id} as paid`);
-          };
-
-          const displayExpenses = canApprove ? expenses : expenses.filter(e => e.userId === user.id);
-          
-          const myPending = displayExpenses.filter(e => e.status === 'অপেক্ষমান').reduce((sum, e) => sum + (e.amount||0), 0);
-          const myApproved = displayExpenses.filter(e => e.status === 'অনুমোদিত').reduce((sum, e) => sum + (e.amount||0), 0);
-          const myPaid = displayExpenses.filter(e => e.status === 'পেইড').reduce((sum, e) => sum + (e.amount||0), 0);
-
-          return (
-            <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2">
-                <i className="fa-solid fa-money-bill-wave text-blue-500"></i> যাতায়াত ও অন্যান্য বিল
-              </h2>
-
-              <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6">
-                 <div className="bg-orange-50 border border-orange-100 p-3 md:p-4 rounded-xl text-center"><p className="text-[10px] md:text-xs text-orange-600 font-bold uppercase">অপেক্ষমান</p><p className="text-lg md:text-2xl font-black text-orange-700">৳{myPending}</p></div>
-                 <div className="bg-blue-50 border border-blue-100 p-3 md:p-4 rounded-xl text-center"><p className="text-[10px] md:text-xs text-blue-600 font-bold uppercase">অনুমোদিত</p><p className="text-lg md:text-2xl font-black text-blue-700">৳{myApproved}</p></div>
-                 <div className="bg-green-50 border border-green-100 p-3 md:p-4 rounded-xl text-center"><p className="text-[10px] md:text-xs text-green-600 font-bold uppercase">পেইড</p><p className="text-lg md:text-2xl font-black text-green-700">৳{myPaid}</p></div>
-              </div>
-              
-              {user.role === 'admin' && editExpId && (
-                  <form onSubmit={submitEditExp} className="mb-8 bg-blue-50/50 p-5 rounded-2xl border border-blue-100 grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="md:col-span-3 font-bold text-blue-700 border-b border-blue-200 pb-2"><i className="fa-solid fa-pen mr-2"></i> বিল এডিট করুন</div>
-                      <div><label className="block text-xs font-bold mb-1">ধরন</label><select value={editCat} onChange={e=>setEditCat(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-xl outline-none"><option value="travel">যাতায়াত</option><option value="other">অন্যান্য বিল</option></select></div>
-                      <div><label className="block text-xs font-bold mb-1">পরিমাণ (৳)</label><input type="number" value={editAmt} onChange={e=>setEditAmt(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-xl outline-none" required /></div>
-                      <div><label className="block text-xs font-bold mb-1">তারিখ</label><input type="date" value={editDate} onChange={e=>setEditDate(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-xl outline-none" required /></div>
-                      <div className="md:col-span-2"><label className="block text-xs font-bold mb-1">বিবরণ</label><input type="text" value={editDesc} onChange={e=>setEditDesc(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-xl outline-none" required /></div>
-                      <div><label className="block text-xs font-bold mb-1">স্ট্যাটাস</label><select value={editStatus} onChange={e=>setEditStatus(e.target.value)} className="w-full p-2.5 border border-slate-300 rounded-xl outline-none"><option value="অপেক্ষমান">অপেক্ষমান</option><option value="অনুমোদিত">অনুমোদিত</option><option value="পেইড">পেইড</option><option value="বাতিল">বাতিল</option></select></div>
-                      <div className="md:col-span-3 flex gap-2 mt-2">
-                         <button type="submit" className="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold">আপডেট করুন</button>
-                         <button type="button" onClick={()=>setEditExpId(null)} className="bg-slate-300 text-slate-700 px-6 py-2.5 rounded-xl font-bold">বাতিল</button>
-                      </div>
-                  </form>
-              )}
-
-              {canSubmit && (
-                <form onSubmit={submitExpense} className="mb-8 bg-blue-50/50 p-5 md:p-6 rounded-2xl border border-blue-100 flex flex-col md:flex-row gap-4 md:items-end">
-                  <div className="w-full md:w-1/4">
-                    <label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">ধরন</label>
-                    <select value={category} onChange={e=>setCategory(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                      <option value="travel">যাতায়াত</option>
-                      <option value="other">অন্যান্য বিল</option>
-                    </select>
-                  </div>
-                  <div className="w-full md:w-1/4"><label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">পরিমাণ (৳)</label><div className="relative"><span className="absolute left-4 top-3.5 text-slate-400 font-bold">৳</span><input type="number" value={amount} onChange={e => setAmount(e.target.value)} className="w-full pl-8 pr-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required placeholder="0.00" /></div></div>
-                  <div className="w-full md:w-1/3"><label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">বিবরণ/স্থান</label><input type="text" value={desc} onChange={e => setDesc(e.target.value)} className="w-full px-4 py-3 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required placeholder="বিবরণ..." /></div>
-                  <button type="submit" className="w-full md:w-auto bg-blue-600 text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 font-bold whitespace-nowrap shadow-lg active:scale-95 transition-all"><i className="fa-solid fa-plus mr-2"></i>এন্ট্রি করুন</button>
-                </form>
-              )}
-              
-              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-left border-collapse">
-                  <thead><tr className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200"><th className="p-4 font-bold">তারিখ</th>{canApprove && <th className="p-4 font-bold">নাম</th>}<th className="p-4 font-bold">ধরন</th><th className="p-4 font-bold">বিবরণ</th><th className="p-4 font-bold">পরিমাণ</th><th className="p-4 font-bold">স্ট্যাটাস</th><th className="p-4 font-bold">অ্যাকশন</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {displayExpenses.length === 0 ? <tr><td colSpan="7" className="p-8 text-center text-slate-400 font-medium">কোনো রেকর্ড পাওয়া যায়নি</td></tr> : 
-                      displayExpenses.map(exp => (
-                        <tr key={exp.id} className="hover:bg-slate-50 transition">
-                           <td className="p-4 text-slate-600 font-medium">{formatDateEn(new Date(exp.date))}</td>
-                           {canApprove && <td className="p-4 font-bold text-slate-800">{exp.userName}</td>}
-                           <td className="p-4"><span className={`px-2 py-1 text-[10px] font-bold rounded ${exp.category==='travel' ? 'bg-indigo-100 text-indigo-700' : 'bg-purple-100 text-purple-700'}`}>{exp.category==='travel' ? 'যাতায়াত' : 'অন্যান্য বিল'}</span></td>
-                           <td className="p-4 text-slate-700">{exp.description} {exp.rejectReason && <div className="text-[10px] text-red-500 font-bold mt-1 bg-red-50 inline-block px-1 rounded">Note: {exp.rejectReason}</div>}</td>
-                           <td className="p-4 font-black text-blue-600 text-lg">৳{exp.amount}</td>
-                           <td className="p-4">
-                             <span className={`px-3 py-1 text-[10px] uppercase rounded-lg font-bold border ${exp.status === 'পেইড' ? 'bg-green-100 text-green-800 border-green-300' : exp.status === 'অনুমোদিত' ? 'bg-blue-50 text-blue-700 border-blue-200' : exp.status === 'বাতিল' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-orange-50 text-orange-700 border-orange-200'}`}>{exp.status}</span>
-                             {exp.approvedAt && <div className="text-[9px] text-blue-600 mt-1 font-semibold whitespace-nowrap"><i className="fa-regular fa-clock"></i> {exp.approvedAt} {exp.approvedBy && `(${exp.approvedBy})`}</div>}
-                             {exp.paidAt && <div className="text-[9px] text-green-600 mt-1 font-semibold whitespace-nowrap"><i className="fa-regular fa-clock"></i> {exp.paidAt} {exp.paidBy && `(${exp.paidBy})`}</div>}
-                             {exp.rejectedAt && <div className="text-[9px] text-red-600 mt-1 font-semibold whitespace-nowrap"><i className="fa-regular fa-clock"></i> {exp.rejectedAt} {exp.rejectedBy && `(${exp.rejectedBy})`}</div>}
-                           </td>
-                           <td className="p-4 flex space-x-1">
-                             {canApprove && exp.status === 'অপেক্ষমান' && <><button onClick={() => handleApprove(exp.id)} className="bg-blue-100 text-blue-600 hover:bg-blue-600 hover:text-white p-2 rounded-lg" title="Approve"><i className="fa-solid fa-check"></i></button><button onClick={() => handleReject(exp.id)} className="bg-red-100 text-red-600 hover:bg-red-600 hover:text-white p-2 rounded-lg" title="Reject"><i className="fa-solid fa-xmark"></i></button></>}
-                             {canApprove && exp.status === 'অনুমোদিত' && <button onClick={() => handleMarkPaid(exp.id)} className="bg-green-100 text-green-700 hover:bg-green-600 hover:text-white px-3 py-2 rounded-lg text-xs font-bold" title="Mark Paid">পে করুন</button>}
-                             
-                             {user.role === 'admin' && <button onClick={() => handleEditExp(exp)} className="bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white p-2 rounded-lg ml-1" title="Edit"><i className="fa-solid fa-pen"></i></button>}
-                             {user.role === 'admin' && <button onClick={() => showConfirm('ডিলিট করতে চান?', () => { deleteExpense(exp.id); logAction(`Deleted expense ${exp.id}`); })} className="bg-slate-100 text-slate-500 hover:bg-red-500 hover:text-white p-2 rounded-lg ml-1" title="Delete"><i className="fa-solid fa-trash-can"></i></button>}
-                           </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="md:hidden grid grid-cols-1 gap-4">
-                 {displayExpenses.length === 0 ? <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">কোনো রেকর্ড পাওয়া যায়নি</div> :
-                   displayExpenses.map(exp => (
-                     <div key={exp.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative">
-                        {user.role === 'admin' && (
-                            <div className="absolute top-4 right-4 flex gap-2">
-                                <button onClick={() => handleEditExp(exp)} className="text-blue-400 hover:text-blue-600 p-2"><i className="fa-solid fa-pen"></i></button>
-                                <button onClick={() => showConfirm('ডিলিট করতে চান?', () => { deleteExpense(exp.id); logAction(`Deleted expense ${exp.id}`); })} className="text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button>
-                            </div>
-                        )}
-                        <div className="flex justify-between items-start mb-2 pr-16"><span className="text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">{formatDateEn(new Date(exp.date))}</span><span className={`px-2 py-0.5 text-[9px] rounded-md font-bold uppercase border ${exp.status === 'পেইড' ? 'bg-green-100 text-green-800' : exp.status === 'অনুমোদিত' ? 'bg-blue-50 text-blue-700' : exp.status === 'বাতিল' ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-700'}`}>{exp.status}</span></div>
-                        {canApprove && <div className="text-xs font-bold text-blue-600 mb-1">{exp.userName}</div>}
-                        <div className="font-black text-slate-800 text-xl mb-1">৳{exp.amount} <span className={`text-[9px] px-1 py-0.5 align-middle rounded font-bold ${exp.category==='travel' ? 'bg-indigo-100 text-indigo-700' : 'bg-purple-100 text-purple-700'}`}>{exp.category==='travel' ? 'যাতায়াত' : 'অন্যান্য বিল'}</span></div>
-                        <div className="text-sm text-slate-600 leading-tight mb-2">{exp.description}</div>
-                        {exp.rejectReason && <div className="text-xs text-red-600 bg-red-50 p-2 rounded mb-2 font-medium"><i className="fa-solid fa-circle-info mr-1"></i>বাতিলের কারণ: {exp.rejectReason}</div>}
-                        
-                        {(exp.approvedAt || exp.paidAt || exp.rejectedAt) && (
-                          <div className="mb-3">
-                             {exp.approvedAt && <div className="text-[10px] text-blue-500 font-semibold"><i className="fa-regular fa-clock"></i> {exp.approvedAt} {exp.approvedBy && `(${exp.approvedBy})`}</div>}
-                             {exp.paidAt && <div className="text-[10px] text-green-500 font-semibold mt-0.5"><i className="fa-regular fa-clock"></i> {exp.paidAt} {exp.paidBy && `(${exp.paidBy})`}</div>}
-                             {exp.rejectedAt && <div className="text-[10px] text-red-500 font-semibold mt-0.5"><i className="fa-regular fa-clock"></i> {exp.rejectedAt} {exp.rejectedBy && `(${exp.rejectedBy})`}</div>}
-                          </div>
-                        )}
-                        
-                        {canApprove && (
-                            <div className="flex flex-wrap gap-2 border-t border-slate-100 pt-3">
-                                {exp.status === 'অপেক্ষমান' && <><button onClick={() => handleApprove(exp.id)} className="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white py-2 rounded-xl text-xs font-bold transition"><i className="fa-solid fa-check"></i> Approve</button><button onClick={() => handleReject(exp.id)} className="flex-1 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white py-2 rounded-xl text-xs font-bold transition"><i className="fa-solid fa-xmark"></i> Reject</button></>}
-                                {exp.status === 'অনুমোদিত' && <button onClick={() => handleMarkPaid(exp.id)} className="flex-1 bg-green-50 text-green-700 hover:bg-green-600 hover:text-white py-2 rounded-xl text-xs font-bold transition"><i className="fa-solid fa-check-double"></i> পে করুন</button>}
-                            </div>
-                        )}
-                     </div>
-                   ))}
-              </div>
-            </div>
-          );
-        }
-
-        function ReportView({ user, reports, addReport, deleteReport, showConfirm, showAlert, logAction }) {
-          const defaultReportFormat = `১. আজকের সম্পন্ন করা কাজসমূহ:\n- \n- \n\n২. অসমাপ্ত কাজ (যদি থাকে):\n- \n\n৩. বিশেষ মন্তব্য বা সমস্যা (যদি থাকে):\n- `;
-          const [customers, setCustomers] = useState(''); const [reportText, setReportText] = useState(defaultReportFormat);
-          
-          const submitReport = (e) => { 
-            e.preventDefault(); 
-            addReport({ id: Date.now(), userId: user.id, userName: user.name, customers: parseInt(customers) || 0, reportText: reportText, date: formatDateISO(new Date()) }); 
-            setCustomers(''); setReportText(defaultReportFormat); showAlert('রিপোর্ট জমা হয়েছে!'); 
-          };
-          
-          const canView = user.role === 'admin' || user.canViewReports;
-          const displayReports = (canView ? reports : reports.filter(r => r.userId === user.id))
-              .filter(r => r.date && !isNaN(new Date(r.date).getTime()));
-
-          return (
-            <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2"><i className="fa-solid fa-file-lines text-blue-500"></i> ডেইলি রিপোর্ট</h2>
-              {user.role !== 'admin' && (
-                <form onSubmit={submitReport} className="mb-8 space-y-4 md:space-y-5 bg-blue-50/30 p-5 md:p-6 rounded-2xl border border-blue-100">
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">কাস্টমার সাপোর্ট দিয়েছেন?</label><input type="number" value={customers} onChange={e => setCustomers(e.target.value)} className="w-full md:w-1/3 border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required min="0" placeholder="e.g. 5" /></div>
-                  <div><label className="block text-xs md:text-sm font-bold text-slate-700 mb-2">কাজের বিস্তারিত বিবরণ</label><textarea value={reportText} onChange={e => setReportText(e.target.value)} className="w-full border border-slate-300 p-4 rounded-xl h-48 md:h-56 focus:ring-2 focus:ring-blue-500 outline-none resize-none" required></textarea></div>
-                  <button type="submit" className="w-full md:w-auto bg-[#1e293b] text-white px-8 py-3.5 rounded-xl hover:bg-slate-800 font-bold shadow-lg active:scale-95 transition-all"><i className="fa-solid fa-paper-plane mr-2"></i> রিপোর্ট জমা দিন</button>
-                </form>
-              )}
-              <div className="space-y-4">
-                {displayReports.length === 0 ? <div className="p-8 text-center text-slate-400 border border-dashed border-slate-300 rounded-2xl bg-slate-50 font-medium">কোনো রেকর্ড পাওয়া যায়নি</div> :
-                  displayReports.map(rep => (
-                    <div key={rep.id} className="border border-slate-200 rounded-2xl p-4 md:p-5 shadow-sm bg-white relative">
-                      {user.role === 'admin' && <button onClick={() => showConfirm('রিপোর্টটি ডিলিট করবেন?', () => { deleteReport(rep.id); logAction(`Deleted report ${rep.id}`); })} className="absolute top-4 right-4 text-red-400 hover:text-red-600 bg-red-50 p-2 rounded-lg"><i className="fa-solid fa-trash-can"></i></button>}
-                      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 md:mb-4 border-b border-slate-100 pb-3 pr-10 gap-2">
-                        <div><div className="font-bold text-slate-800 text-base md:text-lg">{rep.userName}</div><div className="text-xs font-bold text-slate-400 mt-0.5"><i className="fa-regular fa-calendar mr-1"></i> {formatDateEn(new Date(rep.date))}</div></div>
-                        <div className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-bold border border-blue-100 flex items-center"><i className="fa-solid fa-users mr-2 opacity-70"></i> Customers: <span className="ml-1 text-sm">{rep.customers}</span></div>
-                      </div>
-                      <p className="text-slate-700 whitespace-pre-wrap leading-relaxed text-sm md:text-base">{rep.reportText}</p>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          );
-        }
-
-        function SalaryView({ user, users, salaries, addSalary, updateSalary, deleteSalary, showAlert, showConfirm, logAction }) {
-           const [editingSalId, setEditingSalId] = useState(null);
-           const [empId, setEmpId] = useState(''); const [month, setMonth] = useState(''); const [baseSalary, setBaseSalary] = useState('');
-           const [additions, setAdditions] = useState(''); const [deductions, setDeductions] = useState(''); const [deductionReason, setDeductionReason] = useState('');
-           const [status, setStatus] = useState('পেন্ডিং');
-
-           const submitSalary = (e) => {
-              e.preventDefault();
-              const emp = users.find(u => u.id.toString() === empId);
-              if(!emp) return;
-              
-              const netSalary = (parseFloat(baseSalary)||0) - (parseFloat(additions)||0) - (parseFloat(deductions)||0);
-
-              if (editingSalId) {
-                  updateSalary(editingSalId, { 
-                      userId: emp.id, userName: emp.name, month, 
-                      baseSalary: parseFloat(baseSalary)||0, additions: parseFloat(additions)||0, 
-                      deductions: parseFloat(deductions)||0, deductionReason, status, netSalary 
-                  });
-                  logAction(`Updated salary for ${emp.name} ${month}`);
-                  setEditingSalId(null);
-                  showAlert('বেতন সফলভাবে আপডেট করা হয়েছে!');
-              } else {
-                  addSalary({ 
-                      id: Date.now(), userId: emp.id, userName: emp.name, month: month, 
-                      baseSalary: parseFloat(baseSalary)||0, additions: parseFloat(additions)||0, 
-                      deductions: parseFloat(deductions)||0, deductionReason: deductionReason, 
-                      status: status, netSalary: netSalary 
-                  });
-                  logAction(`Added salary for ${emp.name} ${month}`);
-                  showAlert('বেতন সফলভাবে সেভ করা হয়েছে!');
-              }
-              
-              setEmpId(''); setMonth(''); setBaseSalary(''); setAdditions(''); setDeductions(''); setDeductionReason(''); setStatus('পেন্ডিং');
-           };
-
-           const handleEditSalary = (sal) => {
-              setEditingSalId(sal.id); setEmpId(sal.userId.toString()); setMonth(sal.month);
-              setBaseSalary(sal.baseSalary.toString()); setAdditions(sal.additions.toString());
-              setDeductions(sal.deductions.toString()); setDeductionReason(sal.deductionReason || '');
-              setStatus(sal.status);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-           };
-
-           const cancelEdit = () => {
-              setEditingSalId(null); setEmpId(''); setMonth(''); setBaseSalary(''); setAdditions(''); setDeductions(''); setDeductionReason(''); setStatus('পেন্ডিং');
-           };
-
-           const displaySalaries = user.role === 'admin' ? salaries : salaries.filter(s => s.userId === user.id);
-
-           const handleApprove = (sal) => {
-               updateSalary(sal.id, {status: 'অনুমোদিত', approvedAt: getCurrentTimeStr()});
-               logAction(`Approved salary for ${sal.userName} ${sal.month}`);
-           };
-           const handlePaid = (sal) => {
-               updateSalary(sal.id, {status: 'পেইড', paidAt: getCurrentTimeStr()});
-               logAction(`Marked salary paid for ${sal.userName} ${sal.month}`);
-           };
-
-           return (
-              <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-8">
-                 <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2"><i className="fa-solid fa-sack-dollar text-blue-500"></i> বেতনের স্ট্যাটাস ও হিস্টোরি</h2>
-                 
-                 {user.role === 'admin' && (
-                    <div className="bg-blue-50/30 p-5 rounded-2xl border border-blue-100">
-                      <h3 className="font-bold text-slate-800 mb-4">{editingSalId ? 'বেতন এডিট করুন' : 'বেতন সেটআপ করুন'}</h3>
-                      <form onSubmit={submitSalary} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                         <div><label className="block text-xs font-bold mb-2 text-slate-700">স্টাফ নির্বাচন করুন</label><select required value={empId} onChange={e=>setEmpId(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white"><option value="">-- নির্বাচন করুন --</option>{users.filter(u=>u.role!=='admin').map(u=><option key={u.id} value={u.id}>{u.name}</option>)}</select></div>
-                         <div><label className="block text-xs font-bold mb-2 text-slate-700">মাস</label><input type="month" required value={month} onChange={e=>setMonth(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500" /></div>
-                         <div><label className="block text-xs font-bold mb-2 text-slate-700">স্ট্যাটাস</label><select value={status} onChange={e=>setStatus(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white"><option value="পেন্ডিং">পেন্ডিং</option><option value="অনুমোদিত">অনুমোদিত</option><option value="পেইড">পেইড</option></select></div>
-                         
-                         <div><label className="block text-xs font-bold mb-2 text-slate-700">মূল বেতন (৳)</label><input type="number" required value={baseSalary} onChange={e=>setBaseSalary(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="0" /></div>
-                         <div><label className="block text-xs font-bold mb-2 text-slate-700">অগ্রিম/বেতন বাবদ জমা (-)</label><input type="number" value={additions} onChange={e=>setAdditions(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="0" /></div>
-                         <div><label className="block text-xs font-bold mb-2 text-slate-700">বেতন কর্তন (-)</label><input type="number" value={deductions} onChange={e=>setDeductions(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="0" /></div>
-                         
-                         <div className="md:col-span-2"><label className="block text-xs font-bold mb-2 text-slate-700">কর্তনের কারণ</label><input type="text" value={deductionReason} onChange={e=>setDeductionReason(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500" placeholder="যদি থাকে..." /></div>
-                         <div className="md:col-span-1 flex items-end gap-2">
-                             <button type="submit" className="w-full bg-blue-600 text-white px-4 py-3 rounded-xl hover:bg-blue-700 font-bold active:scale-95 transition-all">{editingSalId ? 'আপডেট করুন' : 'সেভ করুন'}</button>
-                             {editingSalId && <button type="button" onClick={cancelEdit} className="w-1/2 bg-slate-200 text-slate-700 px-4 py-3 rounded-xl font-bold hover:bg-slate-300 transition-all">Cancel</button>}
-                         </div>
-                      </form>
-                    </div>
-                 )}
-
-                 <div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2"><i className="fa-solid fa-clock-rotate-left mr-2 text-slate-500"></i> হিস্টোরি (মাসিক)</h3>
-                    <div className="space-y-4">
-                       {displaySalaries.length === 0 ? <div className="p-8 text-center text-slate-400 border border-dashed border-slate-300 rounded-2xl bg-slate-50 font-medium">কোনো বেতনের হিস্টোরি পাওয়া যায়নি</div> :
-                          displaySalaries.sort((a,b) => (b.month||'').localeCompare(a.month||'')).map(sal => (
-                             <div key={sal.id} className="bg-white border border-slate-200 rounded-xl p-4 md:p-5 shadow-sm relative">
-                                {user.role === 'admin' && (
-                                   <div className="absolute top-4 right-4 flex gap-2">
-                                      <button onClick={() => handleEditSalary(sal)} className="text-blue-500 hover:text-blue-700 bg-blue-50 p-2 rounded-lg"><i className="fa-solid fa-pen"></i></button>
-                                      <button onClick={() => showConfirm('এই রেকর্ড ডিলিট করবেন?', () => { deleteSalary(sal.id); logAction(`Deleted salary ${sal.id}`); })} className="text-red-400 hover:text-red-600 bg-red-50 p-2 rounded-lg"><i className="fa-solid fa-trash-can"></i></button>
-                                   </div>
-                                )}
-                                <div className="flex justify-between items-start mb-4 border-b border-slate-100 pb-3 pr-24">
-                                   <div><span className="bg-slate-100 text-slate-700 px-3 py-1 rounded-lg text-sm font-bold tracking-wide mr-2"><i className="fa-regular fa-calendar-days mr-1"></i> {sal.month}</span>{user.role === 'admin' && <span className="font-bold text-blue-600 text-sm">{sal.userName}</span>}</div>
-                                   <div className="text-right">
-                                       <span className={`px-3 py-1 rounded-lg text-xs font-bold ${sal.status === 'পেইড' ? 'bg-green-100 text-green-700' : sal.status === 'অনুমোদিত' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>{sal.status}</span>
-                                       {sal.approvedAt && <div className="text-[9px] text-blue-600 mt-1.5 font-bold"><i className="fa-regular fa-clock"></i> অনুমোদিত: {sal.approvedAt}</div>}
-                                       {sal.paidAt && <div className="text-[9px] text-green-600 mt-1 font-bold"><i className="fa-regular fa-clock"></i> পেইড: {sal.paidAt}</div>}
-                                   </div>
-                                </div>
-                                
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                                   <div className="bg-slate-50 p-3 rounded-lg"><p className="text-[10px] text-slate-500 font-bold mb-1">মূল বেতন</p><p className="font-bold text-slate-800">৳{sal.baseSalary}</p></div>
-                                   <div className="bg-indigo-50 p-3 rounded-lg"><p className="text-[10px] text-indigo-500 font-bold mb-1">অগ্রিম/বেতন বাবদ জমা (-)</p><p className="font-bold text-indigo-700">৳{sal.additions}</p></div>
-                                   <div className="bg-red-50 p-3 rounded-lg"><p className="text-[10px] text-red-500 font-bold mb-1">বেতন কর্তন (-)</p><p className="font-bold text-red-600">৳{sal.deductions}</p></div>
-                                   <div className="bg-green-50 p-3 rounded-lg border border-green-100"><p className="text-[10px] text-green-600 font-bold mb-1">প্রাপ্য বেতন (Net)</p><p className="text-lg font-black text-green-700 leading-none">৳{sal.netSalary}</p></div>
-                                </div>
-                                {sal.deductionReason && <div className="mt-3 text-xs bg-red-50 text-red-600 p-2 rounded-lg font-medium"><i className="fa-solid fa-circle-info mr-1"></i> কর্তনের কারণ: {sal.deductionReason}</div>}
-                                
-                                {user.role === 'admin' && sal.status !== 'পেইড' && (
-                                   <div className="mt-4 flex gap-2">
-                                      {sal.status === 'পেন্ডিং' && <button onClick={()=>handleApprove(sal)} className="bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg text-xs font-bold transition">অনুমোদন দিন</button>}
-                                      {sal.status === 'অনুমোদিত' && <button onClick={()=>handlePaid(sal)} className="bg-green-50 text-green-700 hover:bg-green-600 hover:text-white px-4 py-2 rounded-lg text-xs font-bold transition">পেমেন্ট সম্পন্ন (Mark Paid)</button>}
-                                   </div>
-                                )}
-                             </div>
-                          ))
-                       }
-                    </div>
-                 </div>
-              </div>
-           );
-        }
-
-        function EmployeesView({ users, addUser, updateUser, deleteUser, showConfirm, showAlert, logAction }) {
-          const [editingId, setEditingId] = useState(null);
-          const [name, setName] = useState(''); const [loginId, setLoginId] = useState(''); const [password, setPassword] = useState(''); const [designation, setDesignation] = useState('');
-          const [canInvest, setCanInvest] = useState(false);
-          const [canSubmitExp, setCanSubmitExp] = useState(true);
-          const [canApproveExp, setCanApproveExp] = useState(false);
-          const [canViewReports, setCanViewReports] = useState(false);
-          const [canSubmitAttendance, setCanSubmitAttendance] = useState(false);
-          const [canApproveLeave, setCanApproveLeave] = useState(false);
-
-          const submitUser = (e) => {
-            e.preventDefault();
-            if (editingId) { 
-                updateUser(editingId, { name, loginId, password, designation, canInvest, canSubmitExp, canApproveExp, canViewReports, canSubmitAttendance, canApproveLeave }); 
-                logAction(`Updated staff: ${name}`);
-                setEditingId(null); showAlert('প্রোফাইল আপডেট হয়েছে!'); 
-            } else { 
-                addUser({ id: Date.now(), name, loginId, password, designation, role: 'staff', avatar: null, canInvest, canSubmitExp, canApproveExp, canViewReports, canSubmitAttendance, canApproveLeave }); 
-                showAlert('নতুন স্টাফ যুক্ত হয়েছে!'); 
-            }
-            setName(''); setLoginId(''); setPassword(''); setDesignation(''); setCanInvest(false); setCanSubmitExp(true); setCanApproveExp(false); setCanViewReports(false); setCanSubmitAttendance(false); setCanApproveLeave(false);
-          };
-
-          const handleEdit = (u) => { setEditingId(u.id); setName(u.name); setLoginId(u.loginId); setPassword(u.password); setDesignation(u.designation); setCanInvest(u.canInvest || false); setCanSubmitExp(u.hasOwnProperty('canSubmitExp') ? u.canSubmitExp : true); setCanApproveExp(u.canApproveExp || false); setCanViewReports(u.canViewReports || false); setCanSubmitAttendance(u.canSubmitAttendance || false); setCanApproveLeave(u.canApproveLeave || false); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-          const cancelEdit = () => { setEditingId(null); setName(''); setLoginId(''); setPassword(''); setDesignation(''); setCanInvest(false); setCanSubmitExp(true); setCanApproveExp(false); setCanViewReports(false); setCanSubmitAttendance(false); setCanApproveLeave(false); };
-
-          return (
-            <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2"><i className="fa-solid fa-users-gear text-blue-500"></i> স্টাফ প্রোফাইল</h2>
-              <form onSubmit={submitUser} className="mb-8 bg-slate-50 p-5 md:p-6 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">নাম</label><input required value={name} onChange={e=>setName(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Full Name" /></div>
-                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">লগইন আইডি</label><input required value={loginId} onChange={e=>setLoginId(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Phone/Email" /></div>
-                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">পাসওয়ার্ড</label><input required value={password} onChange={e=>setPassword(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Password" /></div>
-                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">পদবী</label><input required value={designation} onChange={e=>setDesignation(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Technician" /></div>
-                
-                <div className="md:col-span-2 mt-2 flex flex-col gap-3 border p-4 rounded-xl bg-white border-blue-100">
-                    <p className="text-xs font-bold text-slate-400 mb-2 border-b pb-1">অ্যাক্সেস কন্ট্রোল (Access Control)</p>
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-sm w-max">
-                        <input type="checkbox" checked={canSubmitAttendance} onChange={e=>setCanSubmitAttendance(e.target.checked)} className="w-4 h-4 accent-blue-600" />
-                        এই স্টাফকে 'উপস্থিতি' অপশনের অ্যাক্সেস দিন
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-sm w-max">
-                        <input type="checkbox" checked={canApproveLeave} onChange={e=>setCanApproveLeave(e.target.checked)} className="w-4 h-4 accent-blue-600" />
-                        এই স্টাফকে 'ছুটি' অনুমোদনের অ্যাক্সেস দিন
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-sm w-max">
-                        <input type="checkbox" checked={canViewReports} onChange={e=>setCanViewReports(e.target.checked)} className="w-4 h-4 accent-blue-600" />
-                        এই স্টাফকে 'ডেইলি রিপোর্ট' অপশনের অ্যাক্সেস দিন
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-sm w-max">
-                        <input type="checkbox" checked={canSubmitExp} onChange={e=>setCanSubmitExp(e.target.checked)} className="w-4 h-4 accent-blue-600" />
-                        এই স্টাফকে 'যাতায়াত ও বিল' এন্ট্রি করার অ্যাক্সেস দিন
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-sm w-max">
-                        <input type="checkbox" checked={canApproveExp} onChange={e=>setCanApproveExp(e.target.checked)} className="w-4 h-4 accent-blue-600" />
-                        এই স্টাফকে 'যাতায়াত ও বিল' অনুমোদনের অ্যাক্সেস দিন
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer font-bold text-slate-700 text-sm w-max">
-                        <input type="checkbox" checked={canInvest} onChange={e=>setCanInvest(e.target.checked)} className="w-4 h-4 accent-blue-600" />
-                        এই স্টাফকে 'ইনভেস্টমেন্ট' অপশনের অ্যাক্সেস দিন
-                    </label>
-                </div>
-
-                <div className="md:col-span-2 mt-4 flex gap-3">
-                   <button type="submit" className="flex-1 md:flex-none bg-blue-600 text-white px-8 py-3.5 rounded-xl hover:bg-blue-700 font-bold shadow-lg active:scale-95 transition-all"><i className={`fa-solid ${editingId ? 'fa-pen-to-square' : 'fa-user-plus'} mr-2`}></i> {editingId ? 'প্রোফাইল আপডেট' : 'নতুন প্রোফাইল তৈরি করুন'}</button>
-                   {editingId && <button type="button" onClick={cancelEdit} className="px-6 py-3.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition-all">Cancel</button>}
-                </div>
-              </form>
-              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-left border-collapse">
-                  <thead><tr className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200"><th className="p-4 font-bold">নাম</th><th className="p-4 font-bold">লগইন আইডি</th><th className="p-4 font-bold">পাসওয়ার্ড</th><th className="p-4 font-bold">পদবী</th><th className="p-4 font-bold">রোল</th><th className="p-4 font-bold text-center">অ্যাকশন</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {users.map(u => (
-                      <tr key={u.id} className="hover:bg-slate-50 transition">
-                         <td className="p-4 font-bold text-slate-800 flex items-center gap-2">{u.avatar ? <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-xs font-bold">{u.name.charAt(0)}</div>} {u.name} {u.canSubmitAttendance && <span title="উপস্থিতি অ্যাক্সেস" className="ml-1 text-teal-500"><i className="fa-solid fa-user-check"></i></span>} {u.canApproveLeave && <span title="ছুটি অ্যাপ্রুভ অ্যাক্সেস" className="ml-1 text-orange-500"><i className="fa-solid fa-calendar-check"></i></span>} {u.canViewReports && <span title="রিপোর্ট অ্যাক্সেস" className="ml-1 text-yellow-500"><i className="fa-solid fa-file-lines"></i></span>} {(u.hasOwnProperty('canSubmitExp') ? u.canSubmitExp : true) && <span title="বিল এন্ট্রি অ্যাক্সেস" className="ml-1 text-blue-500"><i className="fa-solid fa-pen-to-square"></i></span>} {u.canApproveExp && <span title="বিল অ্যাপ্রুভ অ্যাক্সেস" className="ml-1 text-green-500"><i className="fa-solid fa-money-bill-wave"></i></span>} {u.canInvest && <span title="ইনভেস্টমেন্ট অ্যাক্সেস" className="ml-1 text-indigo-500"><i className="fa-solid fa-chart-line"></i></span>}</td>
-                         <td className="p-4 text-blue-600 font-medium">{u.loginId}</td><td className="p-4 text-slate-500 font-mono text-sm bg-slate-50/50 rounded">{u.password}</td><td className="p-4 text-slate-600 text-sm">{u.designation}</td><td className="p-4"><span className={`px-2 py-1 text-[10px] font-bold uppercase rounded-md ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-600'}`}>{u.role === 'admin' ? 'এডমিন' : 'স্টাফ'}</span></td>
-                         <td className="p-4 text-center space-x-2">{u.role !== 'admin' && <><button onClick={() => handleEdit(u)} className="bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-pen text-sm"></i></button><button onClick={() => showConfirm('প্রোফাইলটি ডিলিট করতে চান?', () => { deleteUser(u.id); logAction(`Deleted staff: ${u.name}`); })} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-trash-can text-sm"></i></button></>}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <div className="md:hidden grid grid-cols-1 gap-4">
-                 {users.map(u => (
-                   <div key={u.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col relative">
-                      {u.role !== 'admin' && <div className="absolute top-4 right-4 flex gap-2"><button onClick={() => handleEdit(u)} className="text-blue-400 hover:text-blue-600 p-2"><i className="fa-solid fa-pen"></i></button><button onClick={() => showConfirm('প্রোফাইলটি ডিলিট করতে চান?', () => { deleteUser(u.id); logAction(`Deleted staff: ${u.name}`); })} className="text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button></div>}
-                      <div className="flex items-center gap-3 mb-3 border-b border-slate-100 pb-3">{u.avatar ? <img src={u.avatar} className="w-12 h-12 rounded-full object-cover shadow-sm" /> : <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center font-bold text-xl shadow-sm">{u.name.charAt(0)}</div>}<div><h4 className="font-bold text-slate-800 text-base leading-tight">{u.name} {u.canSubmitAttendance && <i className="fa-solid fa-user-check text-teal-500 ml-1"></i>} {u.canApproveLeave && <i className="fa-solid fa-calendar-check text-orange-500 ml-1"></i>} {u.canViewReports && <i className="fa-solid fa-file-lines text-yellow-500 ml-1"></i>} {(u.hasOwnProperty('canSubmitExp') ? u.canSubmitExp : true) && <i className="fa-solid fa-pen-to-square text-blue-500 ml-1"></i>} {u.canApproveExp && <i className="fa-solid fa-money-bill-wave text-green-500 ml-1"></i>} {u.canInvest && <i className="fa-solid fa-chart-line text-indigo-500 ml-1"></i>}</h4><span className={`inline-block mt-1 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-md ${u.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-200 text-slate-600'}`}>{u.role === 'admin' ? 'এডমিন' : 'স্টাফ'}</span></div></div>
-                      <div className="text-sm space-y-1.5 text-slate-600"><div className="flex justify-between"><span className="text-slate-400 text-xs">ID:</span> <span className="font-medium text-blue-600">{u.loginId}</span></div><div className="flex justify-between"><span className="text-slate-400 text-xs">Pass:</span> <span className="font-mono bg-slate-100 px-1.5 rounded">{u.password}</span></div><div className="flex justify-between"><span className="text-slate-400 text-xs">Desig:</span> <span>{u.designation}</span></div></div>
-                   </div>
-                 ))}
-              </div>
-            </div>
-          );
-        }
-
-        function PaymentsView({ user, payments, addPayment, deletePayment, users, expenses, showAlert, showConfirm, logAction }) {
-          const [amount, setAmount] = useState(''); const [note, setNote] = useState('');
-          
-          const submitPayment = (e) => {
-            e.preventDefault();
-            const paymentUser = user.role === 'admin' ? users.find(u => u.id.toString() === empId) : user;
-            if(!paymentUser) return;
-            const newPay = { id: Date.now(), userId: paymentUser.id, userName: paymentUser.name, amount: parseFloat(amount), note: note, date: formatDateISO(new Date()), paidAt: getCurrentTimeStr() };
-            addPayment(newPay);
-            setAmount(''); setNote('');
-            if (user.role === 'admin') setEmpId('');
-            showAlert('পেমেন্ট সফলভাবে এন্ট্রি হয়েছে!');
-          };
-
-          const [empId, setEmpId] = useState('');
-
-          const canManageAll = user.role === 'admin';
-          const displayPayments = canManageAll ? payments : payments.filter(p => p.userId === user.id);
-
-          const handleDelete = (id) => {
-              showConfirm('পেমেন্ট ডিলিট করবেন?', () => {
-                  deletePayment(id);
-                  logAction(`Deleted payment ${id}`);
-              });
-          };
-
-          return (
-            <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
-              <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2"><i className="fa-solid fa-wallet text-blue-500"></i> পেমেন্ট</h2>
-              
-              <form onSubmit={submitPayment} className="mb-8 md:mb-10 bg-slate-50 p-5 md:p-6 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 items-end">
-                {canManageAll && (
-                    <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">স্টাফ নির্বাচন করুন</label><select required value={empId} onChange={e=>setEmpId(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white outline-none"><option value="">-- নির্বাচন করুন --</option>{users.filter(u=>u.role!=='admin').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}</select></div>
-                )}
-                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">পরিমাণ (৳)</label><div className="relative"><span className="absolute left-4 top-3.5 text-slate-400 font-bold">৳</span><input type="number" required value={amount} onChange={e=>setAmount(e.target.value)} className="w-full pl-8 pr-4 py-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00" /></div></div>
-                <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">নোট (কীসের পেমেন্ট)</label><input required value={note} onChange={e=>setNote(e.target.value)} className="w-full px-4 py-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Short note..." /></div>
-                <div className="md:col-span-3 mt-2"><button type="submit" className="w-full md:w-auto bg-[#1e293b] text-white px-8 py-3.5 rounded-xl hover:bg-slate-800 font-bold shadow-lg active:scale-95 transition-all"><i className="fa-solid fa-plus mr-2"></i> পেমেন্ট এন্ট্রি করুন</button></div>
-              </form>
-
-              <h3 className="text-lg font-bold text-slate-800 mb-4 border-b border-slate-200 pb-2"><i className="fa-solid fa-clock-rotate-left mr-2 text-slate-500"></i> {canManageAll ? 'সকল পেমেন্ট' : 'আপনার পেমেন্ট'}</h3>
-              <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
-                <table className="w-full text-left border-collapse"><thead><tr className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200"><th className="p-4 font-bold">তারিখ</th><th className="p-4 font-bold">নাম</th><th className="p-4 font-bold">নোট</th><th className="p-4 font-bold">পরিমাণ</th><th className="p-4 font-bold">অ্যাকশন</th></tr></thead>
-                  <tbody className="divide-y divide-slate-100">{displayPayments.length === 0 ? <tr><td colSpan="5" className="p-8 text-center text-slate-400 font-medium">কোনো রেকর্ড পাওয়া যায়নি</td></tr> : displayPayments.map(p => (<tr key={p.id} className="hover:bg-slate-50 transition"><td className="p-4 text-slate-500 font-medium">{formatDateEn(new Date(p.date))} <div className="text-[10px] text-green-600 mt-1 font-bold"><i className="fa-regular fa-clock"></i> পেইড: {p.paidAt}</div></td><td className="p-4 font-bold text-slate-800">{p.userName}</td><td className="p-4 text-slate-600 text-sm">{p.note}</td><td className="p-4 font-black text-green-600 text-lg">৳ {p.amount}</td><td className="p-4"><button onClick={() => handleDelete(p.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-lg"><i className="fa-solid fa-trash-can text-sm"></i></button></td></tr>))}</tbody>
-                </table>
-              </div>
-              <div className="md:hidden grid grid-cols-1 gap-3">
-                 {displayPayments.length === 0 ? <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">কোনো রেকর্ড পাওয়া যায়নি</div> : displayPayments.map(p => (
-                   <div key={p.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between relative">
-                      {user.role === 'admin' && <button onClick={() => handleDelete(p.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button>}
-                      <div className="pr-10"><h4 className="font-bold text-slate-800 text-sm mb-0.5">{p.userName}</h4><div className="text-xs text-slate-500 mb-1.5"><i className="fa-regular fa-calendar mr-1"></i> {formatDateEn(new Date(p.date))}</div><span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-200">{p.note}</span><div className="text-[9px] text-green-600 mt-1.5 font-bold"><i className="fa-regular fa-clock"></i> পেইড: {p.paidAt}</div></div>
-                      <div className="font-black text-green-600 text-xl mr-8">৳{p.amount}</div>
-                   </div>
-                 ))}
-              </div>
-            </div>
-          );
-        }
-
-        function InvestView({ user, investments, addInvestment, updateInvestment, deleteInvestment, showConfirm, showAlert, logAction }) {
-            const [editingId, setEditingId] = useState(null);
-            const [amount, setAmount] = useState('');
-            const [reason, setReason] = useState('');
-            const [invDate, setInvDate] = useState(() => formatDateISO(new Date()));
-
-            const submitInvest = (e) => {
-                e.preventDefault();
-                if(editingId) {
-                    updateInvestment(editingId, { amount: parseFloat(amount), reason, date: invDate });
-                    logAction(`Updated investment ${editingId}`);
-                    setEditingId(null); showAlert('ইনভেস্টমেন্ট আপডেট হয়েছে!');
-                } else {
-                    addInvestment({ id: Date.now(), userId: user.id, userName: user.name, amount: parseFloat(amount), reason, date: invDate, timestamp: getCurrentTimeStr() });
-                    showAlert('ইনভেস্টমেন্ট যুক্ত হয়েছে!');
-                }
-                setAmount(''); setReason(''); setInvDate(formatDateISO(new Date()));
-            };
-
-            const handleEdit = (inv) => {
-                setEditingId(inv.id); setAmount(inv.amount); setReason(inv.reason); setInvDate(inv.date);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            };
-
-            const displayInvestments = user.role === 'admin' ? investments : investments.filter(i => i.userId === user.id);
-            const totalInvest = displayInvestments.reduce((sum, i) => sum + (i.amount || 0), 0);
-
-            return (
-                <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
-                  <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2">
-                    <i className="fa-solid fa-chart-line text-blue-500"></i> ইনভেস্টমেন্ট
-                  </h2>
-
-                  <div className="mb-6 bg-indigo-50 border border-indigo-200 p-5 rounded-2xl shadow-sm inline-block min-w-[250px] w-full md:w-auto">
-                     <p className="text-indigo-800 text-xs md:text-sm font-bold uppercase mb-1">মোট ইনভেস্টমেন্ট</p>
-                     <p className="text-2xl md:text-3xl font-black text-indigo-600">৳{totalInvest}</p>
-                  </div>
-
-                  <form onSubmit={submitInvest} className="mb-8 bg-slate-50 p-5 md:p-6 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 items-end">
-                    <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">তারিখ</label><input type="date" required value={invDate} onChange={e=>setInvDate(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white" /></div>
-                    <div><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">পরিমাণ (৳)</label><div className="relative"><span className="absolute left-4 top-3.5 text-slate-400 font-bold">৳</span><input type="number" required value={amount} onChange={e=>setAmount(e.target.value)} className="w-full pl-8 pr-4 py-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00" /></div></div>
-                    <div className="md:col-span-1"><label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">কীসের জন্য</label><input required value={reason} onChange={e=>setReason(e.target.value)} className="w-full px-4 py-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="বিবরণ..." /></div>
-                    <div className="md:col-span-3 mt-2 flex gap-3">
-                       <button type="submit" className="w-full md:w-auto bg-[#1e293b] text-white px-8 py-3.5 rounded-xl hover:bg-slate-800 font-bold shadow-lg active:scale-95 transition-all"><i className={`fa-solid ${editingId ? 'fa-check' : 'fa-plus'} mr-2`}></i> {editingId ? 'আপডেট করুন' : 'ইনভেস্ট এন্ট্রি করুন'}</button>
-                       {editingId && <button type="button" onClick={()=>{setEditingId(null); setAmount(''); setReason('');}} className="px-6 py-3.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition-all">বাতিল</button>}
-                    </div>
-                  </form>
-
-                  <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
-                    <table className="w-full text-left border-collapse"><thead><tr className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200"><th className="p-4 font-bold">তারিখ</th><th className="p-4 font-bold">নাম</th><th className="p-4 font-bold">বিবরণ</th><th className="p-4 font-bold">পরিমাণ</th>{user.role === 'admin' && <th className="p-4 font-bold text-center">অ্যাকশন</th>}</tr></thead>
-                      <tbody className="divide-y divide-slate-100">{displayInvestments.length === 0 ? <tr><td colSpan={user.role === 'admin' ? 5 : 4} className="p-8 text-center text-slate-400 font-medium">কোনো রেকর্ড পাওয়া যায়নি</td></tr> : displayInvestments.map(inv => (<tr key={inv.id} className="hover:bg-slate-50 transition"><td className="p-4 text-slate-500 font-medium">{formatDateEn(new Date(inv.date))}</td><td className="p-4 font-bold text-slate-800">{inv.userName}</td><td className="p-4 text-slate-600 text-sm">{inv.reason}</td><td className="p-4 font-black text-indigo-600 text-lg">৳ {inv.amount}</td>{user.role === 'admin' && <td className="p-4 text-center space-x-2"><button onClick={() => handleEdit(inv)} className="bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-pen text-sm"></i></button><button onClick={() => showConfirm('ডিলিট করতে চান?', () => { deleteInvestment(inv.id); logAction(`Deleted investment ${inv.id}`); })} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-trash-can text-sm"></i></button></td>}</tr>))}</tbody>
-                    </table>
-                  </div>
-                  <div className="md:hidden grid grid-cols-1 gap-3">
-                     {displayInvestments.length === 0 ? <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">কোনো রেকর্ড পাওয়া যায়নি</div> : displayInvestments.map(inv => (
-                       <div key={inv.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col relative">
-                          {user.role === 'admin' && <div className="absolute top-4 right-4 flex gap-2"><button onClick={() => handleEdit(inv)} className="text-blue-400 hover:text-blue-600 p-2"><i className="fa-solid fa-pen"></i></button><button onClick={() => showConfirm('ডিলিট করতে চান?', () => { deleteInvestment(inv.id); logAction(`Deleted investment ${inv.id}`); })} className="text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button></div>}
-                          <div className="mb-2 pr-16"><h4 className="font-bold text-slate-800 text-sm mb-0.5">{inv.userName}</h4><div className="text-xs text-slate-500 mb-1.5"><i className="fa-regular fa-calendar mr-1"></i> {formatDateEn(new Date(inv.date))}</div><span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-200">{inv.reason}</span></div>
-                          <div className="font-black text-indigo-600 text-xl mt-2 border-t border-slate-100 pt-2">৳{inv.amount}</div>
-                       </div>
-                     ))}
-                  </div>
                 </div>
             );
         }
