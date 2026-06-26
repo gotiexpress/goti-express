@@ -41,22 +41,29 @@
         
         @keyframes floatLogo {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
+            50% { transform: translateY(-3px); }
         }
         .logo-animate { animation: floatLogo 3s ease-in-out infinite; }
 
-        @keyframes spinGear { 100% { transform: rotate(360deg); } }
-        @keyframes spinGearReverse { 100% { transform: rotate(-360deg); } }
-        
-        .gear-slow { animation: spinGear 30s linear infinite; }
-        .gear-slow-reverse { animation: spinGearReverse 40s linear infinite; }
+        /* Tech Network Background Animations */
+        @keyframes floatBlob1 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -50px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        @keyframes floatBlob2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(-30px, 50px) scale(1.2); }
+            66% { transform: translate(20px, -20px) scale(0.8); }
+        }
+        .tech-blob-1 { animation: floatBlob1 15s infinite ease-in-out alternate; }
+        .tech-blob-2 { animation: floatBlob2 18s infinite ease-in-out alternate; }
         
         .gradient-text {
             background: linear-gradient(to right, #2d1960, #5e3186);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-
         .bg-theme-gradient {
             background: linear-gradient(135deg, #2d1960 0%, #5e3186 100%);
         }
@@ -66,7 +73,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
         // Firebase Setup
         const firebaseConfig = {
@@ -112,6 +119,9 @@
             const [menuOpen, setMenuOpen] = useState(false);
             const [showAllPkgs, setShowAllPkgs] = useState(false);
 
+            // Modals State
+            const [activeModal, setActiveModal] = useState(null); // 'complaint', 'support', 'coverage', 'review', null
+
             useEffect(() => {
                 const handleScroll = () => setScrolled(window.scrollY > 50);
                 window.addEventListener('scroll', handleScroll);
@@ -127,63 +137,68 @@
                 }
             }, [webConfig]);
 
-            // Packages logic
+            // Scroll Helper
+            const scrollToSec = (id) => {
+                setMenuOpen(false);
+                if(id === 'home') window.scrollTo(0,0);
+                else {
+                    const el = document.getElementById(id);
+                    if(el) el.scrollIntoView({ behavior: 'smooth' });
+                }
+            };
+
+            const openModal = (modalName) => {
+                setMenuOpen(false);
+                setActiveModal(modalName);
+            };
+
             const visiblePackages = showAllPkgs ? packages : packages.slice(0, 3);
 
             return (
                 <div className="relative overflow-hidden min-h-screen">
                     
-                    {/* Animated Background Gears (24/7 Active feel) */}
-                    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-[0.03]">
-                        <i className="fa-solid fa-gear absolute top-20 left-10 text-[20vw] text-[#2d1960] gear-slow"></i>
-                        <i className="fa-solid fa-gear absolute bottom-40 right-[-5vw] text-[30vw] text-[#5e3186] gear-slow-reverse"></i>
-                        <i className="fa-solid fa-gear absolute top-1/2 left-[30vw] text-[15vw] text-[#2d1960] gear-slow"></i>
+                    {/* Animated IT/Tech Background (Digital Nodes) */}
+                    <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+                        <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-[#5e3186] rounded-full mix-blend-multiply filter blur-[100px] opacity-20 tech-blob-1"></div>
+                        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-[#2d1960] rounded-full mix-blend-multiply filter blur-[120px] opacity-20 tech-blob-2"></div>
+                        <div className="absolute top-[40%] left-[60%] w-[30vw] h-[30vw] bg-purple-400 rounded-full mix-blend-multiply filter blur-[90px] opacity-10 tech-blob-1" style={{animationDelay: '2s'}}></div>
                     </div>
 
                     {/* Navbar */}
-                    <nav className={`fixed top-0 w-full z-40 transition-all duration-300 ${scrolled ? 'bg-white shadow-lg py-3' : 'bg-white/90 backdrop-blur-md py-4'}`}>
+                    <nav className={`fixed top-0 w-full z-40 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-lg py-3' : 'bg-white/80 backdrop-blur-sm py-4 border-b border-white/20'}`}>
                         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center relative z-10">
-                            {/* Animated Logo */}
-                            <div className="flex items-center gap-3 cursor-pointer logo-animate" onClick={()=>window.scrollTo(0,0)}>
-                                <img src="https://i.ibb.co.com/4Zy9b057/black-goti.png" alt="Goti Express" className="h-10 md:h-12 object-contain" />
-                                <span className="text-2xl md:text-3xl font-black gradient-text tracking-wide drop-shadow-sm">গতি এক্সপ্রেস</span>
+                            {/* Balanced Logo & Name */}
+                            <div className="flex items-center gap-2.5 cursor-pointer logo-animate" onClick={()=>scrollToSec('home')}>
+                                <img src="https://i.ibb.co.com/4Zy9b057/black-goti.png" alt="Goti Express Logo" className="h-8 md:h-10 object-contain" />
+                                <span className="text-xl md:text-2xl font-black gradient-text tracking-wider pt-1">গতি এক্সপ্রেস</span>
                             </div>
                             
                             {/* Hamburger Icon */}
-                            <button onClick={() => setMenuOpen(true)} className="text-[#2d1960] text-3xl hover:text-[#5e3186] transition-colors">
+                            <button onClick={() => setMenuOpen(true)} className="text-[#2d1960] text-2xl md:text-3xl hover:text-[#5e3186] transition-colors p-2">
                                 <i className="fa-solid fa-bars"></i>
                             </button>
                         </div>
                     </nav>
 
-                    {}
                     {/* Sidebar Drawer */}
                     {menuOpen && (
                         <div className="fixed inset-0 z-50 flex justify-end">
-                            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMenuOpen(false)}></div>
-                            <div className="relative w-72 bg-white h-full shadow-2xl flex flex-col animate-fade-in">
-                                <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-                                    <span className="font-bold text-[#2d1960] text-lg">মেনু</span>
-                                    <button onClick={() => setMenuOpen(false)} className="w-8 h-8 bg-red-50 text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition"><i className="fa-solid fa-xmark"></i></button>
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onClick={() => setMenuOpen(false)}></div>
+                            <div className="relative w-72 md:w-80 bg-white h-full shadow-2xl flex flex-col animate-fade-in border-l border-purple-100">
+                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-purple-50/50">
+                                    <span className="font-bold text-[#2d1960] text-lg"><i className="fa-solid fa-compass mr-2"></i>মেনু</span>
+                                    <button onClick={() => setMenuOpen(false)} className="w-8 h-8 bg-white text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition shadow-sm"><i className="fa-solid fa-xmark"></i></button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto py-4">
                                     <ul className="space-y-1">
-                                        {[
-                                            { id: 'home', icon: 'fa-house', name: 'হোম' },
-                                            { id: 'about', icon: 'fa-bolt', name: 'সার্ভিসেস' },
-                                            { id: 'packages', icon: 'fa-wifi', name: 'প্যাকেজ' },
-                                            { id: 'about', icon: 'fa-map-location-dot', name: 'কভারেজ' },
-                                            { id: 'contact', icon: 'fa-headset', name: 'সাপোর্ট' },
-                                            { id: 'complaint', icon: 'fa-triangle-exclamation', name: 'অভিযোগ' },
-                                            { id: 'review', icon: 'fa-star', name: 'রিভিউ' },
-                                            { id: 'contact', icon: 'fa-address-book', name: 'যোগাযোগ' }
-                                        ].map(item => (
-                                            <li key={item.name}>
-                                                <a href={`#${item.id}`} onClick={() => setMenuOpen(false)} className="flex items-center px-6 py-3 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]">
-                                                    <i className={`fa-solid ${item.icon} w-6 text-center mr-3 text-lg opacity-70`}></i> {item.name}
-                                                </a>
-                                            </li>
-                                        ))}
+                                        <li><button onClick={() => scrollToSec('home')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-house w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> হোম</button></li>
+                                        <li><button onClick={() => scrollToSec('about')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-bolt w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> সার্ভিসেস</button></li>
+                                        <li><button onClick={() => scrollToSec('packages')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-wifi w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> প্যাকেজ</button></li>
+                                        <li><button onClick={() => openModal('coverage')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-map-location-dot w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> কভারেজ</button></li>
+                                        <li><button onClick={() => openModal('support')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-headset w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> সাপোর্ট</button></li>
+                                        <li><button onClick={() => openModal('complaint')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-triangle-exclamation w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> অভিযোগ</button></li>
+                                        <li><button onClick={() => scrollToSec('review')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-star w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> রিভিউ</button></li>
+                                        <li><button onClick={() => scrollToSec('contact')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-address-book w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> যোগাযোগ</button></li>
                                     </ul>
                                 </div>
                             </div>
@@ -192,18 +207,105 @@
 
                     {/* Popup Ad */}
                     {showPopup && (
-                        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                            <div className="relative bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
-                                <button onClick={() => setShowPopup(false)} className="absolute top-3 right-3 bg-white text-slate-800 w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md hover:bg-red-500 hover:text-white transition z-10"><i className="fa-solid fa-xmark"></i></button>
+                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+                            <div className="relative bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl ring-4 ring-white/10">
+                                <button onClick={() => setShowPopup(false)} className="absolute top-3 right-3 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md hover:bg-red-600 transition z-10"><i className="fa-solid fa-xmark"></i></button>
                                 <img src={webConfig.popupUrl} alt="Advertisement" className="w-full h-auto object-contain" />
                             </div>
                         </div>
                     )}
 
-                    {}
+                    {/* Modals System */}
+                    {activeModal && (
+                        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+                            <div className="bg-white rounded-3xl w-full max-w-md md:max-w-lg overflow-hidden shadow-2xl relative">
+                                <button onClick={() => setActiveModal(null)} className="absolute top-4 right-4 text-slate-400 hover:text-red-500 text-2xl z-10 transition-colors"><i className="fa-solid fa-circle-xmark"></i></button>
+                                
+                                {/* Complaint Modal */}
+                                {activeModal === 'complaint' && (
+                                    <div className="p-8">
+                                        <div className="text-center mb-6">
+                                            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl"><i className="fa-solid fa-triangle-exclamation"></i></div>
+                                            <h3 className="text-2xl font-bold text-slate-800">অভিযোগ বক্স</h3>
+                                            <p className="text-slate-500 text-sm mt-1">যেকোনো টেকনিক্যাল সমস্যা বিস্তারিত জানান</p>
+                                        </div>
+                                        <form onSubmit={(e) => {
+                                            e.preventDefault();
+                                            submitComplaint({ id: Date.now(), name: e.target.name.value, phone: e.target.phone.value, details: e.target.details.value, date: new Date().toLocaleDateString('en-GB') });
+                                            alert('আপনার বার্তা সফলভাবে জমা হয়েছে। আমরা শীঘ্রই যোগাযোগ করবো।');
+                                            setActiveModal(null);
+                                        }} className="space-y-4">
+                                            <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100 p-3.5 rounded-xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium" />
+                                            <input required name="phone" type="text" placeholder="মোবাইল নাম্বার" className="w-full border-2 border-slate-100 p-3.5 rounded-xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium" />
+                                            <textarea required name="details" placeholder="সমস্যা বা অভিযোগ বিস্তারিত লিখুন..." className="w-full border-2 border-slate-100 p-3.5 rounded-xl h-28 focus:border-[#5e3186] outline-none bg-slate-50 resize-none font-medium"></textarea>
+                                            <button type="submit" className="w-full bg-[#5e3186] text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-[#2d1960] transition-colors"><i className="fa-solid fa-paper-plane mr-2"></i> সাবমিট করুন</button>
+                                        </form>
+                                    </div>
+                                )}
+
+                                {/* Support Modal */}
+                                {activeModal === 'support' && (
+                                    <div className="p-8 text-center">
+                                        <div className="w-16 h-16 bg-purple-50 text-[#5e3186] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i className="fa-solid fa-headset"></i></div>
+                                        <h3 className="text-2xl font-bold text-slate-800 mb-6">সাপোর্ট সেন্টার</h3>
+                                        <div className="space-y-3 text-left">
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center"><span className="text-sm font-bold text-slate-600">IT & Support</span><a href="tel:01304251396" className="text-[#5e3186] font-bold"><i className="fa-solid fa-phone mr-1"></i> 01304251396</a></div>
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center"><span className="text-sm font-bold text-slate-600">Technician</span><a href="tel:01813910850" className="text-[#5e3186] font-bold"><i className="fa-solid fa-phone mr-1"></i> 01813910850</a></div>
+                                            <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center"><span className="text-sm font-bold text-slate-600">Technician</span><a href="tel:01875396497" className="text-[#5e3186] font-bold"><i className="fa-solid fa-phone mr-1"></i> 01875396497</a></div>
+                                            <div className="bg-purple-50 p-3 rounded-xl border border-purple-100 flex justify-between items-center"><span className="text-sm font-bold text-[#2d1960]">Manager</span><a href="tel:01815151122" className="text-[#2d1960] font-bold"><i className="fa-solid fa-phone mr-1"></i> 01815151122</a></div>
+                                            <div className="mt-4 text-center border-t border-slate-100 pt-4">
+                                                <p className="text-xs text-slate-500 mb-1">ইমেইল করুন</p>
+                                                <a href="mailto:gotiexpresshelp@gmail.com" className="text-sm font-bold text-slate-700 hover:text-[#5e3186]"><i className="fa-regular fa-envelope mr-1 text-[#5e3186]"></i> gotiexpresshelp@gmail.com</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Coverage Modal */}
+                                {activeModal === 'coverage' && (
+                                    <div className="p-6 md:p-8">
+                                        <div className="text-center mb-4">
+                                            <h3 className="text-2xl font-bold text-slate-800"><i className="fa-solid fa-map-location-dot text-[#5e3186] mr-2"></i> আমাদের কভারেজ</h3>
+                                            <p className="text-slate-500 text-sm mt-1">আমরা বর্তমানে শুধুমাত্র <span className="font-bold text-[#5e3186]">হরিণাকুণ্ডু পৌরসভায়</span> সার্ভিস দিচ্ছি।</p>
+                                        </div>
+                                        <div className="w-full h-64 rounded-xl overflow-hidden shadow-inner border border-slate-200">
+                                            <iframe src="https://maps.google.com/maps?q=Harinakundu%20Paurashava&t=&z=14&ie=UTF8&iwloc=&output=embed" width="100%" height="100%" style={{border:0}} allowFullScreen="" loading="lazy"></iframe>
+                                        </div>
+                                        <button onClick={() => setActiveModal(null)} className="w-full mt-4 bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors">বন্ধ করুন</button>
+                                    </div>
+                                )}
+
+                                {/* Write Review Modal */}
+                                {activeModal === 'review' && (
+                                    <div className="p-8">
+                                        <div className="text-center mb-6">
+                                            <div className="w-16 h-16 bg-yellow-50 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl"><i className="fa-solid fa-star"></i></div>
+                                            <h3 className="text-2xl font-bold text-slate-800">মতামত দিন</h3>
+                                        </div>
+                                        <form onSubmit={(e) => {
+                                            e.preventDefault();
+                                            submitReview({ id: Date.now(), customerName: e.target.name.value, rating: parseInt(e.target.rating.value), comment: e.target.comment.value, date: new Date().toLocaleDateString('en-GB') });
+                                            alert('ধন্যবাদ! আপনার রিভিউ জমা হয়েছে।');
+                                            setActiveModal(null);
+                                        }} className="space-y-4">
+                                            <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100 p-3.5 rounded-xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium" />
+                                            <select required name="rating" className="w-full border-2 border-slate-100 p-3.5 rounded-xl focus:border-[#5e3186] outline-none bg-slate-50 font-bold text-slate-700">
+                                                <option value="5">⭐⭐⭐⭐⭐ (অসাধারণ)</option>
+                                                <option value="4">⭐⭐⭐⭐ (খুব ভালো)</option>
+                                                <option value="3">⭐⭐⭐ (মোটামুটি)</option>
+                                            </select>
+                                            <textarea required name="comment" placeholder="আপনার অভিজ্ঞতা লিখুন..." className="w-full border-2 border-slate-100 p-3.5 rounded-xl h-24 focus:border-[#5e3186] outline-none bg-slate-50 resize-none font-medium"></textarea>
+                                            <button type="submit" className="w-full bg-[#2d1960] text-white py-3.5 rounded-xl font-bold shadow-lg hover:bg-[#5e3186] transition-colors">রিভিউ জমা দিন</button>
+                                        </form>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Hero Section */}
-                    <div id="home" className="relative pt-20 md:pt-24 bg-[#f8fafc] z-10">
-                        <div className="w-full aspect-[16/9] md:aspect-[21/9] lg:h-[60vh] max-h-[600px] overflow-hidden rounded-b-[2rem] md:rounded-b-[4rem] shadow-xl relative">
+                    <div id="home" className="relative pt-20 md:pt-24 bg-transparent z-10 mb-10">
+                        <div className="w-full aspect-[16/9] md:aspect-[21/9] lg:h-[65vh] max-h-[600px] overflow-hidden rounded-b-[2rem] md:rounded-b-[4rem] shadow-2xl relative ring-1 ring-black/5">
                             {(!webConfig?.banners || webConfig.banners.length === 0) ? (
                                 <div className="absolute inset-0 bg-theme-gradient flex flex-col items-center justify-center text-white px-6 text-center">
                                     <h1 className="text-4xl md:text-6xl font-black mb-4 logo-animate">গতি এক্সপ্রেস</h1>
@@ -215,30 +317,56 @@
                         </div>
                     </div>
 
-                    {/* 24/7 Active Banner */}
-                    <div className="bg-theme-gradient py-4 text-white overflow-hidden shadow-inner relative z-10 -mt-6 mx-4 md:mx-auto md:max-w-5xl rounded-2xl">
-                        <div className="px-6 flex justify-around items-center text-sm md:text-base font-bold">
-                            <span className="flex items-center"><i className="fa-solid fa-headset mr-2 text-yellow-300 text-xl animate-pulse"></i> ২৪/৭ সাপোর্ট</span>
-                            <span className="flex items-center"><i className="fa-solid fa-bolt mr-2 text-yellow-300 text-xl"></i> সুপার ফাস্ট</span>
-                            <span className="hidden md:flex items-center"><i className="fa-solid fa-shield-halved mr-2 text-yellow-300 text-xl"></i> নিরাপদ নেটওয়ার্ক</span>
+                    {/* Active Status Ribbon */}
+                    <div className="bg-white/80 backdrop-blur-md py-4 shadow-sm border border-slate-200/50 relative z-10 -mt-16 mx-4 md:mx-auto md:max-w-4xl rounded-2xl">
+                        <div className="px-6 flex justify-around items-center text-sm md:text-base font-bold text-[#2d1960]">
+                            <span className="flex items-center"><span className="relative flex h-3 w-3 mr-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span> ২৪/৭ সাপোর্ট</span>
+                            <span className="flex items-center"><i className="fa-solid fa-bolt mr-2 text-[#5e3186] text-lg"></i> সুপার ফাস্ট</span>
+                            <span className="hidden md:flex items-center"><i className="fa-solid fa-shield-halved mr-2 text-[#5e3186] text-lg"></i> নিরাপদ নেটওয়ার্ক</span>
                         </div>
                     </div>
 
                     {}
-                    {/* About Company & Services */}
+                    {/* About & Services (Modern Glassmorphism Style) */}
                     <div id="about" className="py-20 relative z-10">
                         <div className="max-w-7xl mx-auto px-6 text-center">
-                            <div className="bg-white rounded-[2.5rem] p-8 md:p-12 shadow-xl border border-slate-100">
-                                <h2 className="text-3xl md:text-4xl font-black gradient-text mb-6">গতি এক্সপ্রেসে আপনাকে স্বাগতম</h2>
-                                <p className="text-lg text-slate-600 leading-relaxed max-w-4xl mx-auto font-medium mb-10">
-                                    আমরা দিচ্ছি নিরবচ্ছিন্ন, বাফার-ফ্রি ও উচ্চ গতির ব্রডব্যান্ড ইন্টারনেট পরিষেবা। আপনার বিনোদন, ফ্রিল্যান্সিং, অনলাইন ক্লাস কিংবা অফিশিয়াল কাজের জন্য গতি এক্সপ্রেস হতে পারে আপনার সবচেয়ে নির্ভরযোগ্য সঙ্গী। আমাদের ডেডিকেটেড টিম ২৪/৭ গ্রাহক সেবায় নিয়োজিত আছে। আমাদের কভারেজ এরিয়া- হরিণাকুণ্ডু এবং আশেপাশের এলাকা।
-                                </p>
-                                
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                                    <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100"><i className="fa-solid fa-rocket text-4xl text-[#5e3186] mb-4"></i><h4 className="font-bold text-slate-800">হাই স্পিড</h4></div>
-                                    <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100"><i className="fa-solid fa-server text-4xl text-[#5e3186] mb-4"></i><h4 className="font-bold text-slate-800">BDIX সাপোর্ট</h4></div>
-                                    <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100"><i className="fa-solid fa-gamepad text-4xl text-[#5e3186] mb-4"></i><h4 className="font-bold text-slate-800">স্মুথ গেমিং</h4></div>
-                                    <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100"><i className="fa-solid fa-headset text-4xl text-[#5e3186] mb-4"></i><h4 className="font-bold text-slate-800">সার্বক্ষণিক সাপোর্ট</h4></div>
+                            <h2 className="text-3xl md:text-4xl font-black text-slate-800 mb-6 drop-shadow-sm">গতি এক্সপ্রেসে স্বাগতম</h2>
+                            <p className="text-base md:text-lg text-slate-600 leading-relaxed max-w-3xl mx-auto font-medium mb-12">
+                                আধুনিক ব্রডব্যান্ড নেটওয়ার্কে আপনাকে স্বাগতম। আপনার ফ্রিল্যান্সিং, অনলাইন ক্লাস, গেমিং কিংবা বিনোদনের জন্য আমরা দিচ্ছি সম্পূর্ণ বাফার-ফ্রি ও উচ্চ গতির ইন্টারনেট পরিষেবা। 
+                            </p>
+                            
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {/* Service Card 1 */}
+                                <div className="bg-white/60 backdrop-blur border border-purple-100 p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-300 group shadow-lg shadow-purple-900/5">
+                                   <div className="w-16 h-16 bg-gradient-to-br from-[#2d1960] to-[#5e3186] rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:rotate-12 transition-transform shadow-md">
+                                       <i className="fa-solid fa-rocket text-2xl text-white"></i>
+                                   </div>
+                                   <h4 className="font-bold text-xl text-slate-800 mb-2">হাই স্পিড</h4>
+                                   <p className="text-slate-500 text-sm font-medium">নিরবচ্ছিন্ন বাফার-ফ্রি ইন্টারনেট অভিজ্ঞতা</p>
+                                </div>
+                                {/* Service Card 2 */}
+                                <div className="bg-white/60 backdrop-blur border border-purple-100 p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-300 group shadow-lg shadow-purple-900/5">
+                                   <div className="w-16 h-16 bg-gradient-to-br from-[#2d1960] to-[#5e3186] rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:rotate-12 transition-transform shadow-md">
+                                       <i className="fa-solid fa-server text-2xl text-white"></i>
+                                   </div>
+                                   <h4 className="font-bold text-xl text-slate-800 mb-2">BDIX সাপোর্ট</h4>
+                                   <p className="text-slate-500 text-sm font-medium">হাজারো লোকাল সার্ভারে সুপার স্পিড</p>
+                                </div>
+                                {/* Service Card 3 */}
+                                <div className="bg-white/60 backdrop-blur border border-purple-100 p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-300 group shadow-lg shadow-purple-900/5">
+                                   <div className="w-16 h-16 bg-gradient-to-br from-[#2d1960] to-[#5e3186] rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:rotate-12 transition-transform shadow-md">
+                                       <i className="fa-solid fa-gamepad text-2xl text-white"></i>
+                                   </div>
+                                   <h4 className="font-bold text-xl text-slate-800 mb-2">স্মুথ গেমিং</h4>
+                                   <p className="text-slate-500 text-sm font-medium">লো-পিং এ সেরা গেমিং এক্সপেরিয়েন্স</p>
+                                </div>
+                                {/* Service Card 4 */}
+                                <div className="bg-white/60 backdrop-blur border border-purple-100 p-8 rounded-3xl hover:-translate-y-2 transition-transform duration-300 group shadow-lg shadow-purple-900/5">
+                                   <div className="w-16 h-16 bg-gradient-to-br from-[#2d1960] to-[#5e3186] rounded-2xl flex items-center justify-center mb-6 mx-auto group-hover:rotate-12 transition-transform shadow-md">
+                                       <i className="fa-solid fa-headset text-2xl text-white"></i>
+                                   </div>
+                                   <h4 className="font-bold text-xl text-slate-800 mb-2">২৪/৭ সাপোর্ট</h4>
+                                   <p className="text-slate-500 text-sm font-medium">যেকোনো সমস্যায় সার্বক্ষণিক গ্রাহক সেবা</p>
                                 </div>
                             </div>
                         </div>
@@ -246,35 +374,35 @@
 
                     {}
                     {/* Packages Section */}
-                    <div id="packages" className="py-12 relative z-10">
+                    <div id="packages" className="py-16 relative z-10">
                         <div className="max-w-7xl mx-auto px-6">
-                            <div className="text-center mb-12 animate-fade-in">
-                                <h2 className="text-3xl md:text-4xl font-black text-[#2d1960] mb-4">আমাদের জনপ্রিয় প্যাকেজসমূহ</h2>
-                                <div className="w-24 h-1.5 bg-[#5e3186] mx-auto rounded-full"></div>
+                            <div className="text-center mb-12">
+                                <h2 className="text-3xl md:text-4xl font-black text-slate-800 mb-4">আমাদের জনপ্রিয় প্যাকেজ</h2>
+                                <div className="w-20 h-1.5 bg-gradient-to-r from-[#2d1960] to-[#5e3186] mx-auto rounded-full"></div>
                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                 {packages.length === 0 ? (
-                                    <div className="col-span-full text-center text-slate-500 p-10 bg-white rounded-3xl border border-dashed">শীঘ্রই নতুন প্যাকেজ আপডেট করা হবে।</div>
+                                    <div className="col-span-full text-center text-slate-500 p-10 bg-white/50 rounded-3xl border border-dashed border-slate-300">শীঘ্রই নতুন প্যাকেজ আপডেট করা হবে।</div>
                                 ) : (
                                     visiblePackages.map((pkg, i) => (
-                                        <div key={pkg.id} className="bg-white rounded-3xl p-8 border-2 border-slate-100 shadow-xl hover:border-[#5e3186] hover:-translate-y-2 transition-all duration-300 relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 w-32 h-32 bg-theme-gradient opacity-10 rounded-bl-full transition-transform group-hover:scale-125"></div>
+                                        <div key={pkg.id} className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 relative overflow-hidden group">
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-purple-100 to-transparent rounded-bl-full opacity-50 -z-10 group-hover:scale-110 transition-transform"></div>
                                             <h3 className="text-2xl font-bold text-slate-800 mb-2">{pkg.name}</h3>
-                                            <div className="flex items-baseline mb-6">
-                                                <span className="text-5xl font-black text-[#2d1960]">{pkg.speed}</span>
+                                            <div className="flex items-baseline mb-6 border-b border-slate-100 pb-6">
+                                                <span className="text-5xl font-black text-[#5e3186] tracking-tight">{pkg.speed}</span>
                                             </div>
-                                            <div className="bg-[#f8fafc] rounded-2xl p-5 mb-6 text-center border border-slate-100">
-                                                <span className="text-4xl font-black text-[#5e3186]">৳ {pkg.price}</span><span className="text-slate-500 font-bold ml-1">/ মাস</span>
+                                            <div className="mb-6 flex items-baseline">
+                                                <span className="text-4xl font-black text-[#2d1960]">৳{pkg.price}</span><span className="text-slate-500 font-medium ml-1">/ মাস</span>
                                             </div>
-                                            <ul className="space-y-4 mb-8">
+                                            <ul className="space-y-3 mb-8">
                                                 {pkg.features.map((f, j) => (
-                                                    <li key={j} className="flex items-start font-medium text-slate-600">
-                                                        <i className="fa-solid fa-circle-check text-green-500 mt-1 mr-3"></i> {f}
+                                                    <li key={j} className="flex items-start font-medium text-slate-600 text-sm">
+                                                        <i className="fa-solid fa-check text-[#5e3186] mt-1 mr-3 bg-purple-50 p-1 rounded-full text-[10px]"></i> {f}
                                                     </li>
                                                 ))}
                                             </ul>
-                                            <a href="https://wa.me/8801815151122" target="_blank" className="block text-center w-full bg-slate-100 text-[#2d1960] py-4 rounded-xl font-bold hover:bg-[#2d1960] hover:text-white transition-colors border border-slate-200">কানেকশন নিতে কল করুন</a>
+                                            <a href="https://wa.me/8801815151122" target="_blank" className="block text-center w-full bg-[#2d1960] text-white py-4 rounded-xl font-bold hover:bg-[#5e3186] transition-colors shadow-md hover:shadow-lg">সংযোগ নিন</a>
                                         </div>
                                     ))
                                 )}
@@ -282,9 +410,9 @@
                             
                             {/* See More Button */}
                             {packages.length > 3 && !showAllPkgs && (
-                                <div className="text-center mt-12">
-                                    <button onClick={() => setShowAllPkgs(true)} className="bg-white text-[#2d1960] px-8 py-3.5 rounded-full font-bold shadow-md border border-slate-200 hover:bg-[#2d1960] hover:text-white transition-colors">
-                                        আরও দেখুন <i className="fa-solid fa-angle-down ml-2"></i>
+                                <div className="text-center mt-10">
+                                    <button onClick={() => setShowAllPkgs(true)} className="bg-white text-[#2d1960] px-8 py-3 rounded-full font-bold shadow-sm border border-slate-200 hover:bg-purple-50 transition-colors">
+                                        আরও প্যাকেজ দেখুন <i className="fa-solid fa-angle-down ml-2"></i>
                                     </button>
                                 </div>
                             )}
@@ -292,169 +420,130 @@
                     </div>
 
                     {}
-                    {/* Review Section */}
-                    <div id="review" className="py-20 relative z-10">
-                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Add Review */}
-                            <div className="lg:col-span-1 bg-theme-gradient p-8 rounded-3xl shadow-xl text-white">
-                                <h3 className="text-2xl font-bold mb-6 flex items-center"><i className="fa-solid fa-star text-yellow-400 mr-3"></i> মতামত দিন</h3>
-                                <p className="text-purple-200 mb-6 text-sm">আপনার মূল্যবান মতামত আমাদের সেবার মান উন্নত করতে সাহায্য করবে।</p>
-                                <form onSubmit={(e) => {
-                                    e.preventDefault();
-                                    submitReview({ id: Date.now(), customerName: e.target.name.value, rating: parseInt(e.target.rating.value), comment: e.target.comment.value, date: new Date().toLocaleDateString('bn-BD') });
-                                    alert('ধন্যবাদ! আপনার রিভিউ জমা হয়েছে।');
-                                    e.target.reset();
-                                }} className="space-y-4">
-                                    <input required name="name" type="text" placeholder="আপনার নাম" className="w-full bg-white/10 border border-white/20 p-3.5 rounded-xl outline-none text-white placeholder:text-white/60 focus:bg-white/20 transition" />
-                                    <select required name="rating" className="w-full bg-white/10 border border-white/20 p-3.5 rounded-xl outline-none text-white focus:bg-white/20 transition [&>option]:text-slate-800">
-                                        <option value="5">⭐⭐⭐⭐⭐ (অসাধারণ)</option>
-                                        <option value="4">⭐⭐⭐⭐ (খুব ভালো)</option>
-                                        <option value="3">⭐⭐⭐ (মোটামুটি)</option>
-                                    </select>
-                                    <textarea required name="comment" placeholder="আপনার অভিজ্ঞতা লিখুন..." className="w-full bg-white/10 border border-white/20 p-3.5 rounded-xl outline-none text-white placeholder:text-white/60 focus:bg-white/20 transition h-24 resize-none"></textarea>
-                                    <button type="submit" className="w-full bg-white text-[#2d1960] py-3.5 rounded-xl font-bold hover:bg-purple-50 transition-colors shadow-lg">রিভিউ জমা দিন</button>
-                                </form>
+                    {/* Reviews Only Section */}
+                    <div id="review" className="py-16 relative z-10 bg-white/40 border-y border-slate-200/50">
+                        <div className="max-w-7xl mx-auto px-6">
+                            <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                                <div>
+                                    <h2 className="text-3xl font-black text-slate-800">গ্রাহকদের মতামত</h2>
+                                    <p className="text-slate-500 mt-1">আমাদের সার্ভিস সম্পর্কে গ্রাহকরা যা বলছেন</p>
+                                </div>
+                                <button onClick={() => openModal('review')} className="bg-[#5e3186] text-white px-6 py-2.5 rounded-full font-bold shadow-md hover:bg-[#2d1960] transition-colors"><i className="fa-solid fa-pen-nib mr-2"></i> মতামত দিন</button>
                             </div>
-
-                            {/* View Reviews */}
-                            <div className="lg:col-span-2 flex flex-col justify-center space-y-4">
-                                {reviews.length === 0 ? <p className="text-slate-500 text-center">এখনো কোনো রিভিউ দেওয়া হয়নি।</p> : 
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {reviews.length === 0 ? <p className="text-slate-500 text-center col-span-full py-10">এখনো কোনো রিভিউ দেওয়া হয়নি।</p> : 
                                     reviews.map((r, idx) => (
-                                    <div key={r.id} className="bg-white p-6 rounded-3xl shadow-md border border-slate-100 flex items-start gap-4 animate-fade-in" style={{animationDelay: `${idx*50}ms`}}>
-                                        <div className="w-12 h-12 bg-purple-100 text-[#5e3186] rounded-full flex items-center justify-center font-bold text-xl shrink-0">{r.customerName.charAt(0)}</div>
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="font-bold text-slate-800">{r.customerName}</h4>
-                                                <div className="text-yellow-400 text-xs">
-                                                    {[...Array(5)].map((_, i) => <i key={i} className={`fa-star ${i < r.rating ? 'fa-solid' : 'fa-regular text-slate-300'}`}></i>)}
+                                    <div key={r.id} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-purple-50 text-[#5e3186] rounded-full flex items-center justify-center font-black text-xl shrink-0 border border-purple-200">{r.customerName.charAt(0)}</div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-800 leading-tight">{r.customerName}</h4>
+                                                <div className="text-yellow-400 text-xs mt-1">
+                                                    {[...Array(5)].map((_, i) => <i key={i} className={`fa-star ${i < r.rating ? 'fa-solid' : 'fa-regular text-slate-200'}`}></i>)}
                                                 </div>
                                             </div>
-                                            <p className="text-slate-600 text-sm italic leading-relaxed">"{r.comment}"</p>
                                         </div>
+                                        <p className="text-slate-600 text-sm leading-relaxed">"{r.comment}"</p>
                                     </div>
                                 ))}
                             </div>
                         </div>
                     </div>
 
-                    {/* Dedicated Bill Payment CTA */}
-                    <div className="py-12 relative z-10 px-6">
-                        <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row items-center border border-slate-100">
-                            <div className="p-8 md:p-12 md:w-2/3">
-                                <h3 className="text-3xl font-black text-[#2d1960] mb-4">আপনার মাসিক বিল পরিশোধ করুন সহজেই</h3>
-                                <p className="text-slate-600 font-medium mb-8">এখন ঘরে বসেই বিকাশ, নগদ, রকেট বা ডেবিট/ক্রেডিট কার্ডের মাধ্যমে আপনার ইন্টারনেট বিল পরিশোধ করতে পারবেন অত্যন্ত নিরাপদে।</p>
-                                <a href="https://portal.inetbills.com/" target="_blank" className="inline-block bg-[#2d1960] text-white px-10 py-4 rounded-full font-bold text-lg hover:bg-[#5e3186] transition-colors shadow-lg hover:shadow-xl"><i className="fa-solid fa-credit-card mr-2 text-purple-300"></i> অনলাইনে বিল পরিশোধ করুন</a>
+                    {/* Professional Bill Payment CTA */}
+                    <div className="py-20 relative z-10 px-6">
+                        <div className="max-w-5xl mx-auto bg-gradient-to-br from-[#2d1960] to-[#5e3186] rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col md:flex-row items-center border border-purple-800/50 relative">
+                            <div className="absolute right-0 top-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl"></div>
+                            <div className="p-10 md:p-14 md:w-2/3 relative z-10 text-white">
+                                <span className="bg-white/20 text-purple-100 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider mb-4 inline-block">Easy Payment</span>
+                                <h3 className="text-3xl md:text-4xl font-black mb-4 leading-tight">আপনার মাসিক বিল <br/>পরিশোধ করুন সহজেই</h3>
+                                <p className="text-purple-200 font-medium mb-8 text-sm md:text-base leading-relaxed">ঘরে বসেই বিকাশ, নগদ, রকেট বা যেকোনো ব্যাংক কার্ডের মাধ্যমে অত্যন্ত নিরাপদে ইন্টারনেট বিল পরিশোধ করুন কোনো ঝামেলা ছাড়াই।</p>
+                                <a href="https://portal.inetbills.com/" target="_blank" className="inline-flex items-center bg-white text-[#2d1960] px-8 py-3.5 rounded-full font-black hover:scale-105 transition-transform shadow-xl"><i className="fa-solid fa-credit-card mr-2 text-[#5e3186] text-lg"></i> অনলাইনে বিল দিন</a>
                             </div>
-                            <div className="md:w-1/3 bg-purple-50 flex items-center justify-center p-8 h-full w-full border-t md:border-t-0 md:border-l border-slate-100">
-                                <i className="fa-solid fa-mobile-screen-button text-[8rem] text-[#5e3186] opacity-80 logo-animate"></i>
+                            <div className="md:w-1/3 flex items-center justify-center p-8 relative z-10 pb-12 md:pb-8">
+                                <div className="w-40 h-40 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-2xl logo-animate">
+                                    <i className="fa-solid fa-mobile-screen-button text-7xl text-white"></i>
+                                </div>
                             </div>
                         </div>
-                    </div>
-
-                    {/* Complaint Form (Ovijog) */}
-                    <div id="complaint" className="py-12 relative z-10">
-                         <div className="max-w-3xl mx-auto px-6">
-                            <div className="bg-white p-8 md:p-10 rounded-3xl shadow-lg border border-red-50">
-                                <div className="text-center mb-8">
-                                    <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl"><i className="fa-solid fa-triangle-exclamation"></i></div>
-                                    <h3 className="text-2xl md:text-3xl font-bold text-slate-800">অভিযোগ বক্স</h3>
-                                    <p className="text-slate-500 mt-2">যেকোনো টেকনিক্যাল সমস্যা বা জিজ্ঞাসা বিস্তারিত লিখে আমাদের জানান।</p>
-                                </div>
-                                <form onSubmit={(e) => {
-                                    e.preventDefault();
-                                    submitComplaint({ id: Date.now(), name: e.target.name.value, phone: e.target.phone.value, details: e.target.details.value, date: new Date().toLocaleDateString('bn-BD') });
-                                    alert('আপনার বার্তা সফলভাবে জমা হয়েছে। আমরা শীঘ্রই যোগাযোগ করবো।');
-                                    e.target.reset();
-                                }} className="space-y-5">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                        <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100 p-4 rounded-xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium" />
-                                        <input required name="phone" type="text" placeholder="মোবাইল নাম্বার" className="w-full border-2 border-slate-100 p-4 rounded-xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium" />
-                                    </div>
-                                    <textarea required name="details" placeholder="সমস্যা বা অভিযোগ বিস্তারিত লিখুন..." className="w-full border-2 border-slate-100 p-4 rounded-xl h-32 focus:border-[#5e3186] outline-none bg-slate-50 resize-none font-medium"></textarea>
-                                    <div className="text-center">
-                                        <button type="submit" className="bg-red-500 text-white px-10 py-4 rounded-xl font-bold shadow-lg hover:bg-red-600 transition-all"><i className="fa-solid fa-paper-plane mr-2"></i> অভিযোগ সাবমিট করুন</button>
-                                    </div>
-                                </form>
-                            </div>
-                         </div>
                     </div>
 
                     {}
                     {/* Footer & Contact Section */}
-                    <footer id="contact" className="bg-[#0f172a] text-slate-300 pt-16 pb-8 border-t-4 border-[#5e3186] relative z-10">
-                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-16">
+                    <footer id="contact" className="bg-[#0f172a] text-slate-300 pt-16 pb-8 border-t-[6px] border-[#5e3186] relative z-10">
+                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-16">
                             
                             {/* Brand Info */}
                             <div>
                                 <div className="flex items-center gap-3 mb-6">
-                                    <img src="https://i.ibb.co.com/4Zy9b057/black-goti.png" alt="Logo" className="h-10 bg-white rounded-lg p-1" />
-                                    <span className="text-2xl font-black text-white tracking-wide">গতি এক্সপ্রেস</span>
+                                    <img src="https://i.ibb.co.com/4Zy9b057/black-goti.png" alt="Logo" className="h-10 bg-white rounded p-1.5" />
+                                    <span className="text-2xl font-black text-white tracking-wider">গতি এক্সপ্রেস</span>
                                 </div>
                                 <p className="text-sm leading-relaxed mb-6 font-medium text-slate-400">
-                                    গতি এক্সপ্রেস একটি আধুনিক ব্রডব্যান্ড ইন্টারনেট প্রোভাইডার। গ্রাহকদের সর্বোচ্চ সেবা ও নিরবচ্ছিন্ন ইন্টারনেট নিশ্চিত করাই আমাদের প্রধান লক্ষ্য।
+                                    গতি এক্সপ্রেস একটি আধুনিক ব্রডব্যান্ড ইন্টারনেট প্রোভাইডার। গ্রাহকদের সর্বোচ্চ সেবা ও নিরবচ্ছিন্ন বাফার-ফ্রি ইন্টারনেট নিশ্চিত করাই আমাদের প্রধান লক্ষ্য।
                                 </p>
-                                <div className="flex gap-4">
-                                    <a href="#" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-[#5e3186] hover:text-white transition"><i className="fa-brands fa-facebook-f"></i></a>
-                                    <a href="https://wa.me/8801815151122" target="_blank" className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center hover:bg-green-500 hover:text-white transition"><i className="fa-brands fa-whatsapp"></i></a>
+                                <div className="flex gap-3">
+                                    <a href="#" className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition"><i className="fa-brands fa-facebook-f"></i></a>
+                                    <a href="https://wa.me/8801815151122" target="_blank" className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center hover:bg-green-500 hover:text-white transition"><i className="fa-brands fa-whatsapp text-lg"></i></a>
                                 </div>
                             </div>
 
-                            {/* Contact Details (English Numbers) */}
+                            {/* Contact Details */}
                             <div>
-                                <h4 className="text-white font-bold text-xl mb-6 border-b border-slate-700 pb-3">যোগাযোগের ঠিকানা</h4>
-                                <ul className="space-y-5 text-sm font-medium">
+                                <h4 className="text-white font-bold text-lg mb-6 uppercase tracking-wider">যোগাযোগ</h4>
+                                <ul className="space-y-4 text-sm font-medium">
                                     <li className="flex items-start">
-                                        <i className="fa-solid fa-location-dot mt-1 mr-4 text-purple-400 text-lg"></i> 
-                                        <span>উপজেলা মোড়, মাস্টার মার্কেট (২য় তলা),<br/>হরিণাকুণ্ডু, ঝিনাইদহ।</span>
+                                        <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-[#a78bfa] shrink-0 mr-3"><i className="fa-solid fa-location-dot"></i></div> 
+                                        <span className="pt-1 leading-relaxed">উপজেলা মোড়, মাস্টার মার্কেট (২য় তলা),<br/>হরিণাকুণ্ডু, ঝিনাইদহ।</span>
                                     </li>
                                     <li className="flex items-center">
-                                        <i className="fa-solid fa-phone mr-4 text-purple-400 text-lg"></i> 
-                                        <span className="font-bold text-white tracking-wider">01813910850</span>
+                                        <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-[#a78bfa] shrink-0 mr-3"><i className="fa-solid fa-phone"></i></div>
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-white tracking-wider">01813910850</span>
+                                            <span className="font-bold text-white tracking-wider">01815151122</span>
+                                        </div>
                                     </li>
                                     <li className="flex items-center">
-                                        <i className="fa-solid fa-phone mr-4 text-purple-400 text-lg"></i> 
-                                        <span className="font-bold text-white tracking-wider">01815151122</span>
-                                    </li>
-                                    <li className="flex items-center">
-                                        <i className="fa-solid fa-envelope mr-4 text-purple-400 text-lg"></i> 
-                                        <span>support@gotiexpress.com</span>
+                                        <div className="w-8 h-8 rounded bg-slate-800 flex items-center justify-center text-[#a78bfa] shrink-0 mr-3"><i className="fa-solid fa-envelope"></i></div> 
+                                        <span>gotiexpresshelp@gmail.com</span>
                                     </li>
                                 </ul>
                             </div>
 
-                            {/* Google Map Embedded */}
-                            <div className="h-[250px] w-full rounded-2xl overflow-hidden shadow-lg border border-slate-700">
-                                <iframe 
-                                    src="https://maps.google.com/maps?q=23%C2%B039'07.4%22N+89%C2%B002'42.7%22E&t=&z=15&ie=UTF8&iwloc=&output=embed" 
-                                    width="100%" 
-                                    height="100%" 
-                                    style={{ border: 0 }} 
-                                    allowFullScreen="" 
-                                    loading="lazy" 
-                                    referrerPolicy="no-referrer-when-downgrade">
-                                </iframe>
+                            {/* Google Map Embedded (Specific Location) */}
+                            <div>
+                                <h4 className="text-white font-bold text-lg mb-6 uppercase tracking-wider">অফিস ম্যাপ</h4>
+                                <div className="h-40 w-full rounded-xl overflow-hidden shadow-lg border border-slate-700">
+                                    <iframe 
+                                        src="https://maps.google.com/maps?q=23.652056,89.045194&t=&z=15&ie=UTF8&iwloc=&output=embed" 
+                                        width="100%" 
+                                        height="100%" 
+                                        style={{ border: 0 }} 
+                                        allowFullScreen="" 
+                                        loading="lazy" 
+                                        referrerPolicy="no-referrer-when-downgrade">
+                                    </iframe>
+                                </div>
                             </div>
                         </div>
 
                         {/* Copyright */}
-                        <div className="max-w-7xl mx-auto px-6 mt-16 pt-8 border-t border-slate-800 text-center flex flex-col md:flex-row justify-between items-center text-xs font-medium text-slate-500 gap-4">
+                        <div className="max-w-7xl mx-auto px-6 mt-16 pt-6 border-t border-slate-800 text-center flex flex-col md:flex-row justify-between items-center text-xs font-medium text-slate-500 gap-4">
                             <p>&copy; {new Date().getFullYear()} Goti Express. All rights reserved.</p>
-                            <div className="flex gap-4">
-                                <a href="#" className="hover:text-white transition">Privacy Policy</a>
-                                <a href="#" className="hover:text-white transition">Terms of Service</a>
-                            </div>
+                            <p>Developed & Managed by Goti Express IT</p>
                         </div>
                     </footer>
 
                     {/* Floating WhatsApp Button */}
-                    <a href="https://wa.me/8801815151122" target="_blank" title="WhatsApp এ মেসেজ দিন" className="fixed bottom-8 right-6 md:right-8 w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(34,197,94,0.6)] hover:bg-green-600 hover:scale-110 transition-all z-50 animate-bounce">
+                    <a href="https://wa.me/8801815151122" target="_blank" title="WhatsApp এ মেসেজ দিন" className="fixed bottom-8 right-6 md:right-8 w-14 h-14 bg-green-500 text-white rounded-full flex items-center justify-center text-3xl shadow-[0_0_20px_rgba(34,197,94,0.5)] hover:bg-green-600 hover:scale-110 transition-all z-50 animate-bounce">
                         <i className="fa-brands fa-whatsapp"></i>
                     </a>
                 </div>
             );
         }
 
-        // Hero Slider Component (No text overlay, smooth fading)
+        // Modern Sliding Banner Component
         function HeroSlider({ banners }) {
             const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -462,22 +551,24 @@
                 if(banners.length <= 1) return;
                 const timer = setInterval(() => {
                     setCurrentIndex(prev => (prev + 1) % banners.length);
-                }, 4000); // Change image every 4 seconds
+                }, 4000); 
                 return () => clearInterval(timer);
             }, [banners]);
 
             return (
-                <div className="absolute inset-0 w-full h-full bg-slate-900">
-                    {banners.map((url, i) => (
-                        <img 
-                            key={i} 
-                            src={url} 
-                            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ease-in-out ${i === currentIndex ? 'opacity-100' : 'opacity-0'}`} 
-                            alt={`Banner ${i+1}`}
-                        />
-                    ))}
-                    {/* Subtle gradient overlay to make navbar stand out more */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-black/10"></div>
+                <div className="absolute inset-0 w-full h-full bg-slate-900 overflow-hidden">
+                    <div 
+                        className="flex w-full h-full transition-transform duration-1000 ease-in-out"
+                        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+                    >
+                        {banners.map((url, i) => (
+                            <div key={i} className="min-w-full h-full relative">
+                                <img src={url} className="w-full h-full object-cover" alt={`Banner ${i+1}`} />
+                            </div>
+                        ))}
+                    </div>
+                    {/* Shadow overlay for navbar visibility */}
+                    <div className="absolute top-0 w-full h-32 bg-gradient-to-b from-black/40 to-transparent"></div>
                 </div>
             );
         }
