@@ -123,7 +123,6 @@
             });
         };
 
-        // Custom Hooks
         function useLocalStorage(key, initialValue) {
             const [storedValue, setStoredValue] = useState(() => {
                 try {
@@ -135,9 +134,8 @@
             });
             
             useEffect(() => {
-                try { 
-                    window.localStorage.setItem(key, JSON.stringify(storedValue)); 
-                } catch (error) {}
+                try { window.localStorage.setItem(key, JSON.stringify(storedValue)); } 
+                catch (error) {}
             }, [key, storedValue]);
             
             return [storedValue, setStoredValue];
@@ -145,14 +143,16 @@
 
         function useDatabase(collectionName, initialData = []) {
             const [data, setData] = useState(() => {
-                const local = window.localStorage.getItem('goti_' + collectionName);
-                if (local) {
-                    let parsed = JSON.parse(local);
-                    if (['attendances','expenses','salaries','reports','incomes'].includes(collectionName)) {
-                        parsed = migrateDates(parsed, ['date']);
+                try {
+                    const local = window.localStorage.getItem('goti_' + collectionName);
+                    if (local) {
+                        let parsed = JSON.parse(local);
+                        if (['attendances','expenses','salaries','reports','incomes'].includes(collectionName)) {
+                            parsed = migrateDates(parsed, ['date']);
+                        }
+                        return parsed || [];
                     }
-                    return parsed;
-                }
+                } catch(e) { console.error(e); }
                 return initialData;
             });
 
@@ -177,27 +177,27 @@
             }, [collectionName]);
 
             const addData = (newItem) => {
-                const newData = [newItem, ...data];
+                const newData = [newItem, ...(data || [])];
                 setData(newData);
                 window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData));
                 db.collection(collectionName).doc(newItem.id.toString()).set(newItem).catch(err => console.log("Add error:", err));
             };
 
             const updateData = (id, updatedFields) => {
-                const newData = data.map(item => item.id === id ? { ...item, ...updatedFields } : item);
+                const newData = (data || []).map(item => item.id === id ? { ...item, ...updatedFields } : item);
                 setData(newData);
                 window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData));
                 db.collection(collectionName).doc(id.toString()).update(updatedFields).catch(err => console.log("Update error:", err));
             };
 
             const deleteData = (id) => {
-                const newData = data.filter(item => item.id !== id);
+                const newData = (data || []).filter(item => item.id !== id);
                 setData(newData);
                 window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData));
                 db.collection(collectionName).doc(id.toString()).delete().catch(err => console.log("Delete error:", err));
             };
 
-            return [data, addData, updateData, deleteData];
+            return [data || [], addData, updateData, deleteData];
         }
 
         const getCurrentTimeStr = () => {
@@ -209,44 +209,19 @@
 
         const initialUsers = [
           { 
-              id: 1, 
-              name: 'Admin', 
-              loginId: 'sreebashkumar65@gmail.com', 
-              password: '01815151122', 
-              role: 'admin', 
-              designation: 'Administrator', 
-              avatar: null, 
-              canInvest: true, 
-              canApproveExp: true, 
-              canSubmitExp: true, 
-              canViewReports: true, 
-              canSubmitAttendance: true, 
-              canApproveLeave: true, 
-              canManageWebsite: true, 
-              canSubmitIncome: true 
+              id: 1, name: 'Admin', loginId: 'sreebashkumar65@gmail.com', password: '01815151122', 
+              role: 'admin', designation: 'Administrator', avatar: null, 
+              canInvest: true, canApproveExp: true, canSubmitExp: true, canViewReports: true, 
+              canSubmitAttendance: true, canApproveLeave: true, canManageWebsite: true, canSubmitIncome: true 
           },
           { 
-              id: 2, 
-              name: 'স্বাধীন আহমেদ তামিম', 
-              loginId: '01813910850', 
-              password: '01813910850', 
-              role: 'staff', 
-              designation: 'Technician', 
-              avatar: null, 
-              canInvest: false, 
-              canApproveExp: false, 
-              canSubmitExp: true, 
-              canViewReports: false, 
-              canSubmitAttendance: false, 
-              canApproveLeave: false, 
-              canManageWebsite: false, 
-              canSubmitIncome: false 
+              id: 2, name: 'স্বাধীন আহমেদ তামিম', loginId: '01813910850', password: '01813910850', 
+              role: 'staff', designation: 'Technician', avatar: null, 
+              canInvest: false, canApproveExp: false, canSubmitExp: true, canViewReports: false, 
+              canSubmitAttendance: false, canApproveLeave: false, canManageWebsite: false, canSubmitIncome: false 
           }
         ];
 
-        // ==========================================
-        // 🟡 Main App
-        // ==========================================
         function App() {
           const [isLoggedIn, setIsLoggedIn] = useLocalStorage('goti_isLoggedIn', false);
           const [currentUser, setCurrentUser] = useLocalStorage('goti_currentUser', null);
@@ -281,26 +256,20 @@
           const todayWebEn = new Date().toLocaleDateString('en-GB');
           const todayWebBn = new Date().toLocaleDateString('bn-BD');
 
-          const hasNewAttendance = attendances.some(a => a.date === todayISO);
-          const hasNewLeave = leaves.some(l => l.status === 'অপেক্ষমান');
-          const hasNewExp = expenses.some(e => e.status === 'অপেক্ষমান');
-          const hasNewReport = reports.some(r => r.date === todayISO);
-          const hasNewIncome = incomes.some(i => i.date === todayISO);
-          const hasNewPayment = payments.some(p => p.date === todayISO);
-          const hasNewInvestment = investments.some(i => i.date === todayISO);
-          const hasNewWeb = complaints.some(c => c.date === todayWebEn || c.date === todayWebBn) || 
-                            reviews.some(r => r.date === todayWebEn || r.date === todayWebBn);
+          const hasNewAttendance = (attendances || []).some(a => a.date === todayISO);
+          const hasNewLeave = (leaves || []).some(l => l.status === 'অপেক্ষমান');
+          const hasNewExp = (expenses || []).some(e => e.status === 'অপেক্ষমান');
+          const hasNewReport = (reports || []).some(r => r.date === todayISO);
+          const hasNewIncome = (incomes || []).some(i => i.date === todayISO);
+          const hasNewPayment = (payments || []).some(p => p.date === todayISO);
+          const hasNewInvestment = (investments || []).some(i => i.date === todayISO);
+          const hasNewWeb = (complaints || []).some(c => c.date === todayWebEn || c.date === todayWebBn) || 
+                            (reviews || []).some(r => r.date === todayWebEn || r.date === todayWebBn);
 
           // Logs helper
           const logAction = (action) => {
             if (!currentUser) return;
-            addLog({ 
-                id: Date.now(), 
-                userId: currentUser.id, 
-                userName: currentUser.name, 
-                action, 
-                timestamp: new Date().toISOString() 
-            });
+            addLog({ id: Date.now(), userId: currentUser.id, userName: currentUser.name, action, timestamp: new Date().toISOString() });
           };
 
           const addAttendanceWithLog = (item) => { addAttendance(item); logAction(`Submitted attendance`); };
@@ -314,7 +283,7 @@
           const addUserWithLog = (item) => { addUser(item); logAction(`Added new staff: ${item.name}`); };
 
           useEffect(() => {
-              if (currentUser) {
+              if (currentUser && users) {
                   const updatedMe = users.find(u => u.id === currentUser.id);
                   if (updatedMe && JSON.stringify(updatedMe) !== JSON.stringify(currentUser)) {
                       setCurrentUser(updatedMe);
@@ -323,7 +292,7 @@
           }, [users, currentUser]);
 
           useEffect(() => {
-              if (currentUser?.role === 'admin') {
+              if (currentUser?.role === 'admin' && logs) {
                   const threeMonthsAgo = new Date();
                   threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
                   const cutoff = threeMonthsAgo.toISOString();
@@ -341,7 +310,7 @@
             e.preventDefault();
             const loginId = e.target.loginId.value;
             const password = e.target.password.value;
-            const user = users.find(u => u.loginId === loginId && u.password === password);
+            const user = (users || []).find(u => u.loginId === loginId && u.password === password);
             if (user) { 
                 setCurrentUser(user); 
                 setIsLoggedIn(true); 
@@ -366,7 +335,6 @@
             logAction('Updated profile picture');
           };
 
-          // --- Login View ---
           if (!isLoggedIn) {
             return (
               <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-4">
@@ -406,7 +374,6 @@
             );
           }
 
-          // --- Dashboard Layout ---
           return (
             <div className="flex h-screen bg-[#f1f5f9] overflow-hidden">
               {dialog.open && <DialogBox dialog={dialog} setDialog={setDialog} />}
@@ -459,7 +426,7 @@
                         <SidebarItem icon="fa-money-bill-wave" label="যাতায়াত ও বিল" active={currentView === 'expenses'} hasNew={currentUser.role === 'admin' && hasNewExp} onClick={() => {setCurrentView('expenses'); setSidebarOpen(false);}} />
                     )}
                     
-                    {/* 🟢 New Income Menu */}
+                    {/* 🟢 Income Menu */}
                     {(currentUser.role === 'admin' || currentUser.canSubmitIncome) && (
                         <SidebarItem icon="fa-money-bill-trend-up" label="আয় (Income)" active={currentView === 'incomes'} hasNew={currentUser.role === 'admin' && hasNewIncome} onClick={() => {setCurrentView('incomes'); setSidebarOpen(false);}} />
                     )}
@@ -494,10 +461,9 @@
                 </div>
               </div>
 
-              {/* Main Content */}
+              {/* Main Content Area */}
               <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
                 
-                {/* Header for Desktop */}
                 <header className="hidden md:flex h-16 bg-[#0f172a] text-white items-center justify-between px-6 shrink-0 shadow-md z-10">
                   <div className="flex items-center space-x-2 text-sm text-blue-300">
                       <i className="fa-solid fa-house text-xs"></i> <span>›</span> 
@@ -522,7 +488,6 @@
                   </div>
                 </header>
 
-                {/* Header for Mobile */}
                 <header className="md:hidden h-14 bg-[#0f172a] text-white flex items-center justify-between px-4 shrink-0 shadow-md z-10">
                   <div className="flex items-center gap-2">
                       <img src="https://i.ibb.co.com/4Zy9b057/black-goti.png" alt="Logo" className="h-6 object-contain bg-white rounded px-1" />
@@ -546,7 +511,6 @@
                         <ExpenseView user={currentUser} expenses={expenses} addExpense={addExpenseWithLog} updateExpense={updateExpense} deleteExpense={deleteExpense} showConfirm={showConfirm} showPrompt={showPrompt} showAlert={showAlert} logAction={logAction} />
                     )}
                     
-                    {/* 🟢 New Income View */}
                     {currentView === 'incomes' && (currentUser.role === 'admin' || currentUser.canSubmitIncome) && (
                         <IncomeView user={currentUser} incomes={incomes} addIncome={addIncomeWithLog} updateIncome={updateIncome} deleteIncome={deleteIncome} showConfirm={showConfirm} showAlert={showAlert} logAction={logAction} />
                     )}
@@ -567,7 +531,6 @@
                         <InvestView user={currentUser} investments={investments} addInvestment={addInvestmentWithLog} updateInvestment={updateInvestment} deleteInvestment={deleteInvestment} showConfirm={showConfirm} showAlert={showAlert} logAction={logAction} />
                     )}
                     
-                    {/* 🌐 Website Settings View */}
                     {currentView === 'website' && (currentUser.role === 'admin' || currentUser.canManageWebsite) && (
                         <WebsiteSettingsView config={webConfig[0] || {id: 1, adsStatus: false, popupUrl: '', banners: []}} updateConfig={updateConfig} packages={packages} addPackage={addPackage} updatePackage={updatePackage} deletePackage={deletePackage} complaints={complaints} deleteComplaint={deleteComplaint} reviews={reviews} updateReview={updateReview} deleteReview={deleteReview} showAlert={showAlert} showConfirm={showConfirm} logAction={logAction} />
                     )}
@@ -600,10 +563,6 @@
           );
         }
 
-        // ==========================================
-        // 🔵 COMPONENTS
-        // ==========================================
-        
         function DialogBox({ dialog, setDialog }) {
           return (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
@@ -714,7 +673,6 @@
           );
         }
 
-        // 🟢 Income Component
         function IncomeView({ user, incomes, addIncome, updateIncome, deleteIncome, showConfirm, showAlert, logAction }) {
             const [editingId, setEditingId] = useState(null);
             const [amount, setAmount] = useState('');
@@ -760,8 +718,7 @@
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
 
-            // Calculations based on filterMonth
-            const filteredIncomes = incomes.filter(i => i.date && i.date.startsWith(filterMonth));
+            const filteredIncomes = (incomes || []).filter(i => i.date && i.date.startsWith(filterMonth));
             const totalIncome = filteredIncomes.reduce((sum, i) => sum + (i.amount || 0), 0);
             
             const sourceTotals = {
@@ -788,7 +745,6 @@
                         </div>
                     </div>
 
-                    {/* Dashboard Cards */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="bg-green-50 border border-green-200 p-6 rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-center">
                             <i className="fa-solid fa-sack-dollar absolute -right-6 -bottom-6 text-green-500/20 text-9xl"></i>
@@ -822,7 +778,6 @@
                         </div>
                     </div>
 
-                    {/* Add Income Form */}
                     <form onSubmit={submitIncome} className="bg-blue-50/50 p-5 md:p-6 rounded-2xl border border-blue-100 grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-5 items-end">
                         <div>
                             <label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">তারিখ</label>
@@ -862,7 +817,6 @@
                         </div>
                     </form>
 
-                    {/* Income History Table */}
                     <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
                         <table className="w-full text-left border-collapse">
                             <thead>
@@ -903,7 +857,6 @@
                         </table>
                     </div>
                     
-                    {/* Mobile View */}
                     <div className="md:hidden grid grid-cols-1 gap-3">
                         {filteredIncomes.length === 0 ? (
                             <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">এই মাসে কোনো রেকর্ড পাওয়া যায়নি</div>
@@ -1008,10 +961,9 @@
             }
           };
 
-          const myAttendances = user.role === 'admin' ? attendances : attendances.filter(a => a.userId === user.id);
+          const myAttendances = user.role === 'admin' ? (attendances || []) : (attendances || []).filter(a => a.userId === user.id);
           const allEmployees = users ? users.filter(u => u.role !== 'admin' && u.canSubmitAttendance) : []; 
 
-          // History filtering by selected month
           const filteredByMonth = myAttendances.filter(a => a.date && a.date.startsWith(histMonth));
           const displayRecords = showAllHist ? filteredByMonth : filteredByMonth.slice(0, 7);
 
@@ -1043,7 +995,7 @@
                     <div className="flex-1 space-y-4 md:space-y-6 w-full text-center md:text-left">
                       <div className="hidden md:block">
                         <h3 className="text-xl font-bold text-slate-800 mb-2">লাইভ ক্যামেরা (সেলফি)</h3>
-                        <p className="text-slate-600 bg-blue-50 p-4 rounded-xl border border-blue-100">ক্যামেরার দিকে তাকিয়ে সাবমিট বাটনে ক্লিক করুন। আপনার বর্তমান ছবি, তারিখ, সময় ও লোকেশন সেভ হবে।</p>
+                        <p className="text-slate-600 bg-blue-50 p-4 rounded-xl border border-blue-100">ক্যামেরার দিকে তাকিয়ে সাবমিট বাটনে ক্লিক করুন। আপনার বর্তমান ছবি, তারিখ, সময় ও লোকেশন সেভ হবে.</p>
                       </div>
                       
                       {locError && (
@@ -1070,15 +1022,14 @@
                 </div>
               )}
 
-              {/* Admin Today's Attendance Cards */}
               {user.role === 'admin' && (
                   <div className="mb-8">
                       <h3 className="text-lg font-bold text-slate-800 mb-4 bg-slate-100 p-3 rounded-lg border border-slate-200">
                           <i className="fa-solid fa-calendar-check mr-2 text-blue-600"></i> আজকের উপস্থিতি - <span className="text-blue-600">{formatDateEn(new Date(todayISO))}</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {allEmployees.map(emp => {
-                              const records = attendances.filter(a => a.userId === emp.id && a.date === todayISO).sort((a,b) => b.id - a.id);
+                          {(allEmployees || []).map(emp => {
+                              const records = (attendances || []).filter(a => a.userId === emp.id && a.date === todayISO).sort((a,b) => b.id - a.id);
                               const latestRecord = records[0];
                               return (
                                   <div key={emp.id} className={`p-4 rounded-2xl border shadow-sm flex items-center gap-4 ${records.length > 0 ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
@@ -1106,7 +1057,6 @@
                   </div>
               )}
 
-              {/* History Table */}
               <div>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
                    <h3 className="text-lg font-bold text-slate-800">{user.role === 'admin' ? 'সকল স্টাফের উপস্থিতির ইতিহাস' : 'আপনার উপস্থিতির ইতিহাস'}</h3>
@@ -1188,7 +1138,6 @@
                 )}
               </div>
 
-              {/* মাসিক উপস্থিতি/অনুপস্থিতি ক্যালেন্ডার (Admin Only) */}
               {user.role === 'admin' && (
                   <div className="mt-10 pt-8 border-t border-slate-200">
                       <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
@@ -1200,7 +1149,7 @@
                               <label className="block text-xs font-bold text-slate-700 mb-2">স্টাফ নির্বাচন করুন</label>
                               <select value={selectedEmpForCalendar} onChange={e => setSelectedEmpForCalendar(e.target.value)} className="w-full border border-slate-300 p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 bg-white">
                                   <option value="">-- স্টাফ সিলেক্ট করুন --</option>
-                                  {allEmployees.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+                                  {(allEmployees || []).map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
                               </select>
                           </div>
                           <div className="flex-1">
@@ -1217,7 +1166,7 @@
                                   const daysInMonth = new Date(y, m, 0).getDate();
                                   const firstDay = new Date(y, m - 1, 1).getDay();
 
-                                  const empAtts = attendances.filter(a => a.userId.toString() === selectedEmpForCalendar);
+                                  const empAtts = (attendances || []).filter(a => a.userId.toString() === selectedEmpForCalendar);
                                   const hasAttendance = (day) => {
                                       const dateStr = `${y}-${String(m).padStart(2,'0')}-${String(day).padStart(2,'0')}`; 
                                       return empAtts.some(a => a.date === dateStr);
@@ -1291,7 +1240,7 @@
           };
           
           const canApproveLeave = user.role === 'admin' || user.canApproveLeave;
-          const displayLeaves = canApproveLeave ? leaves : leaves.filter(l => l.userId === user.id);
+          const displayLeaves = canApproveLeave ? (leaves || []) : (leaves || []).filter(l => l.userId === user.id);
 
           const handleApprove = (leave) => {
               updateLeave(leave.id, { status: 'অনুমোদিত', approvedAt: getCurrentTimeStr(), approvedBy: user.designation });
@@ -1468,7 +1417,7 @@
               logAction(`Marked expense ${id} as paid`);
           };
 
-          const displayExpenses = canApprove ? expenses : expenses.filter(e => e.userId === user.id);
+          const displayExpenses = canApprove ? (expenses || []) : (expenses || []).filter(e => e.userId === user.id);
           
           const myPending = displayExpenses.filter(e => e.status === 'অপেক্ষমান').reduce((sum, e) => sum + (e.amount||0), 0);
           const myApproved = displayExpenses.filter(e => e.status === 'অনুমোদিত').reduce((sum, e) => sum + (e.amount||0), 0);
@@ -1727,7 +1676,7 @@
           };
           
           const canView = user.role === 'admin' || user.canViewReports;
-          const displayReports = (canView ? reports : reports.filter(r => r.userId === user.id))
+          const displayReports = (canView ? (reports || []) : (reports || []).filter(r => r.userId === user.id))
               .filter(r => r.date && !isNaN(new Date(r.date).getTime()));
 
           return (
@@ -1794,7 +1743,7 @@
 
            const submitSalary = (e) => {
               e.preventDefault();
-              const emp = users.find(u => u.id.toString() === empId);
+              const emp = (users || []).find(u => u.id.toString() === empId);
               if(!emp) return;
               
               const netSalary = (parseFloat(baseSalary)||0) - (parseFloat(additions)||0) - (parseFloat(deductions)||0);
@@ -1850,7 +1799,7 @@
               setEditingSalId(null); setEmpId(''); setMonth(''); setBaseSalary(''); setAdditions(''); setDeductions(''); setDeductionReason(''); setStatus('পেন্ডিং');
            };
 
-           const displaySalaries = user.role === 'admin' ? salaries : salaries.filter(s => s.userId === user.id);
+           const displaySalaries = user.role === 'admin' ? (salaries || []) : (salaries || []).filter(s => s.userId === user.id);
 
            const handleApprove = (sal) => {
                updateSalary(sal.id, {status: 'অনুমোদিত', approvedAt: getCurrentTimeStr()});
@@ -1875,7 +1824,7 @@
                              <label className="block text-xs font-bold mb-2 text-slate-700">স্টাফ নির্বাচন করুন</label>
                              <select required value={empId} onChange={e=>setEmpId(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white">
                                  <option value="">-- নির্বাচন করুন --</option>
-                                 {users.filter(u=>u.role!=='admin').map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
+                                 {(users || []).filter(u=>u.role!=='admin').map(u=><option key={u.id} value={u.id}>{u.name}</option>)}
                              </select>
                          </div>
                          <div>
@@ -2153,7 +2102,7 @@
                       </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {users.map(u => (
+                    {(users || []).map(u => (
                       <tr key={u.id} className="hover:bg-slate-50 transition">
                          <td className="p-4 font-bold text-slate-800 flex items-center gap-2">
                              {u.avatar ? <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" /> : <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-xs font-bold">{u.name.charAt(0)}</div>} 
@@ -2194,7 +2143,7 @@
               
               {/* Cards for Mobile */}
               <div className="md:hidden grid grid-cols-1 gap-4">
-                 {users.map(u => (
+                 {(users || []).map(u => (
                    <div key={u.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col relative">
                       {u.role !== 'admin' && (
                           <div className="absolute top-4 right-4 flex gap-2">
@@ -2239,7 +2188,7 @@
           
           const submitPayment = (e) => {
             e.preventDefault();
-            const paymentUser = user.role === 'admin' ? users.find(u => u.id.toString() === empId) : user;
+            const paymentUser = user.role === 'admin' ? (users || []).find(u => u.id.toString() === empId) : user;
             if(!paymentUser) return;
             const newPay = { 
                 id: Date.now(), 
@@ -2259,7 +2208,7 @@
           const [empId, setEmpId] = useState('');
 
           const canManageAll = user.role === 'admin';
-          const displayPayments = canManageAll ? payments : payments.filter(p => p.userId === user.id);
+          const displayPayments = canManageAll ? (payments || []) : (payments || []).filter(p => p.userId === user.id);
 
           const handleDelete = (id) => {
               showConfirm('পেমেন্ট ডিলিট করবেন?', () => {
@@ -2280,7 +2229,7 @@
                         <label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">স্টাফ নির্বাচন করুন</label>
                         <select required value={empId} onChange={e=>setEmpId(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white outline-none">
                             <option value="">-- নির্বাচন করুন --</option>
-                            {users.filter(u=>u.role!=='admin').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+                            {(users || []).filter(u=>u.role!=='admin').map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
                         </select>
                     </div>
                 )}
@@ -2310,26 +2259,207 @@
                             <th className="p-4 font-bold">তারিখ</th>
                             <th className="p-4 font-bold">নাম</th>
                             <th className="p-4 font-bold">নোট</th>
-                          {user.role === 'admin' && <div className="absolute top-4 right-4 flex gap-2"><button onClick={() => handleEdit(inv)} className="text-blue-400 hover:text-blue-600 p-2"><i className="fa-solid fa-pen"></i></button><button onClick={() => showConfirm('ডিলিট করতে চান?', () => { deleteInvestment(inv.id); logAction(`Deleted investment ${inv.id}`); })} className="text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button></div>}
-                          <div className="mb-2 pr-16"><h4 className="font-bold text-slate-800 text-sm mb-0.5">{inv.userName}</h4><div className="text-xs text-slate-500 mb-1.5"><i className="fa-regular fa-calendar mr-1"></i> {formatDateEn(new Date(inv.date))}</div><span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-200">{inv.reason}</span></div>
-                          <div className="font-black text-indigo-600 text-xl mt-2 border-t border-slate-100 pt-2">৳{inv.amount}</div>
+                            <th className="p-4 font-bold">পরিমাণ</th>
+                            <th className="p-4 font-bold">অ্যাকশন</th>
+                        </tr>
+                    </thead>
+                  <tbody className="divide-y divide-slate-100">
+                      {displayPayments.length === 0 ? (
+                          <tr><td colSpan="5" className="p-8 text-center text-slate-400 font-medium">কোনো রেকর্ড পাওয়া যায়নি</td></tr>
+                      ) : (
+                          displayPayments.map(p => (
+                              <tr key={p.id} className="hover:bg-slate-50 transition">
+                                  <td className="p-4 text-slate-500 font-medium">
+                                      {formatDateEn(new Date(p.date))} 
+                                      <div className="text-[10px] text-green-600 mt-1 font-bold"><i className="fa-regular fa-clock"></i> পেইড: {p.paidAt}</div>
+                                  </td>
+                                  <td className="p-4 font-bold text-slate-800">{p.userName}</td>
+                                  <td className="p-4 text-slate-600 text-sm">{p.note}</td>
+                                  <td className="p-4 font-black text-green-600 text-lg">৳ {p.amount}</td>
+                                  <td className="p-4">
+                                      <button onClick={() => handleDelete(p.id)} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-lg"><i className="fa-solid fa-trash-can text-sm"></i></button>
+                                  </td>
+                              </tr>
+                          ))
+                      )}
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="md:hidden grid grid-cols-1 gap-3">
+                 {displayPayments.length === 0 ? (
+                     <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">কোনো রেকর্ড পাওয়া যায়নি</div>
+                 ) : (
+                     displayPayments.map(p => (
+                       <div key={p.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between relative">
+                          {user.role === 'admin' && (
+                              <button onClick={() => handleDelete(p.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600 p-2">
+                                  <i className="fa-solid fa-trash-can"></i>
+                              </button>
+                          )}
+                          <div className="pr-10">
+                              <h4 className="font-bold text-slate-800 text-sm mb-0.5">{p.userName}</h4>
+                              <div className="text-xs text-slate-500 mb-1.5">
+                                  <i className="fa-regular fa-calendar mr-1"></i> {formatDateEn(new Date(p.date))}
+                              </div>
+                              <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-200">{p.note}</span>
+                              <div className="text-[9px] text-green-600 mt-1.5 font-bold"><i className="fa-regular fa-clock"></i> পেইড: {p.paidAt}</div>
+                          </div>
+                          <div className="font-black text-green-600 text-xl mr-8">৳{p.amount}</div>
                        </div>
-                     ))}
+                     ))
+                 )}
+              </div>
+            </div>
+          );
+        }
+
+        function InvestView({ user, investments, addInvestment, updateInvestment, deleteInvestment, showConfirm, showAlert, logAction }) {
+            const [editingId, setEditingId] = useState(null);
+            const [amount, setAmount] = useState('');
+            const [reason, setReason] = useState('');
+            const [invDate, setInvDate] = useState(() => formatDateISO(new Date()));
+
+            const submitInvest = (e) => {
+                e.preventDefault();
+                if(editingId) {
+                    updateInvestment(editingId, { amount: parseFloat(amount), reason, date: invDate });
+                    logAction(`Updated investment ${editingId}`);
+                    setEditingId(null); showAlert('ইনভেস্টমেন্ট আপডেট হয়েছে!');
+                } else {
+                    addInvestment({ 
+                        id: Date.now(), 
+                        userId: user.id, 
+                        userName: user.name, 
+                        amount: parseFloat(amount), 
+                        reason, 
+                        date: invDate, 
+                        timestamp: getCurrentTimeStr() 
+                    });
+                    showAlert('ইনভেস্টমেন্ট যুক্ত হয়েছে!');
+                }
+                setAmount(''); setReason(''); setInvDate(formatDateISO(new Date()));
+            };
+
+            const handleEdit = (inv) => {
+                setEditingId(inv.id); setAmount(inv.amount); setReason(inv.reason); setInvDate(inv.date);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+
+            const displayInvestments = user.role === 'admin' ? (investments || []) : (investments || []).filter(i => i.userId === user.id);
+            const totalInvest = displayInvestments.reduce((sum, i) => sum + (i.amount || 0), 0);
+
+            return (
+                <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
+                  <h2 className="text-xl md:text-2xl font-bold text-slate-800 mb-6 border-b border-slate-100 pb-3 md:pb-4 flex items-center gap-2">
+                    <i className="fa-solid fa-chart-line text-blue-500"></i> ইনভেস্টমেন্ট
+                  </h2>
+
+                  <div className="mb-6 bg-indigo-50 border border-indigo-200 p-5 rounded-2xl shadow-sm inline-block min-w-[250px] w-full md:w-auto">
+                     <p className="text-indigo-800 text-xs md:text-sm font-bold uppercase mb-1">মোট ইনভেস্টমেন্ট</p>
+                     <p className="text-2xl md:text-3xl font-black text-indigo-600">৳{totalInvest}</p>
+                  </div>
+
+                  <form onSubmit={submitInvest} className="mb-8 bg-slate-50 p-5 md:p-6 rounded-2xl border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5 items-end">
+                    <div>
+                        <label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">তারিখ</label>
+                        <input type="date" required value={invDate} onChange={e=>setInvDate(e.target.value)} className="w-full border border-slate-300 p-3.5 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white" />
+                    </div>
+                    <div>
+                        <label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">পরিমাণ (৳)</label>
+                        <div className="relative">
+                            <span className="absolute left-4 top-3.5 text-slate-400 font-bold">৳</span>
+                            <input type="number" required value={amount} onChange={e=>setAmount(e.target.value)} className="w-full pl-8 pr-4 py-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="0.00" />
+                        </div>
+                    </div>
+                    <div className="md:col-span-1">
+                        <label className="block text-xs md:text-sm font-bold mb-2 text-slate-700">কীসের জন্য</label>
+                        <input required value={reason} onChange={e=>setReason(e.target.value)} className="w-full px-4 py-3.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="বিবরণ..." />
+                    </div>
+                    <div className="md:col-span-3 mt-2 flex gap-3">
+                       <button type="submit" className="w-full md:w-auto bg-[#1e293b] text-white px-8 py-3.5 rounded-xl hover:bg-slate-800 font-bold shadow-lg active:scale-95 transition-all">
+                           <i className={`fa-solid ${editingId ? 'fa-check' : 'fa-plus'} mr-2`}></i> {editingId ? 'আপডেট করুন' : 'ইনভেস্ট এন্ট্রি করুন'}
+                       </button>
+                       {editingId && (
+                           <button type="button" onClick={()=>{setEditingId(null); setAmount(''); setReason('');}} className="px-6 py-3.5 rounded-xl bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition-all">বাতিল</button>
+                       )}
+                    </div>
+                  </form>
+
+                  <div className="hidden md:block overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-slate-50 text-slate-500 uppercase text-xs tracking-wider border-b border-slate-200">
+                                <th className="p-4 font-bold">তারিখ</th>
+                                <th className="p-4 font-bold">নাম</th>
+                                <th className="p-4 font-bold">বিবরণ</th>
+                                <th className="p-4 font-bold">পরিমাণ</th>
+                                {user.role === 'admin' && <th className="p-4 font-bold text-center">অ্যাকশন</th>}
+                            </tr>
+                        </thead>
+                      <tbody className="divide-y divide-slate-100">
+                          {displayInvestments.length === 0 ? (
+                              <tr><td colSpan={user.role === 'admin' ? 5 : 4} className="p-8 text-center text-slate-400 font-medium">কোনো রেকর্ড পাওয়া যায়নি</td></tr>
+                          ) : (
+                              displayInvestments.map(inv => (
+                                  <tr key={inv.id} className="hover:bg-slate-50 transition">
+                                      <td className="p-4 text-slate-500 font-medium">{formatDateEn(new Date(inv.date))}</td>
+                                      <td className="p-4 font-bold text-slate-800">{inv.userName}</td>
+                                      <td className="p-4 text-slate-600 text-sm">{inv.reason}</td>
+                                      <td className="p-4 font-black text-indigo-600 text-lg">৳ {inv.amount}</td>
+                                      {user.role === 'admin' && (
+                                          <td className="p-4 text-center space-x-2">
+                                              <button onClick={() => handleEdit(inv)} className="bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-pen text-sm"></i></button>
+                                              <button onClick={() => showConfirm('ডিলিট করতে চান?', () => { deleteInvestment(inv.id); logAction(`Deleted investment ${inv.id}`); })} className="bg-red-50 text-red-500 hover:bg-red-500 hover:text-white w-8 h-8 rounded-lg transition"><i className="fa-solid fa-trash-can text-sm"></i></button>
+                                          </td>
+                                      )}
+                                  </tr>
+                              ))
+                          )}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="md:hidden grid grid-cols-1 gap-3">
+                     {displayInvestments.length === 0 ? (
+                         <div className="p-6 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">কোনো রেকর্ড পাওয়া যায়নি</div>
+                     ) : (
+                         displayInvestments.map(inv => (
+                           <div key={inv.id} className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col relative">
+                              {user.role === 'admin' && (
+                                  <div className="absolute top-4 right-4 flex gap-2">
+                                      <button onClick={() => handleEdit(inv)} className="text-blue-400 hover:text-blue-600 p-2"><i className="fa-solid fa-pen"></i></button>
+                                      <button onClick={() => showConfirm('ডিলিট করতে চান?', () => { deleteInvestment(inv.id); logAction(`Deleted investment ${inv.id}`); })} className="text-red-400 hover:text-red-600 p-2"><i className="fa-solid fa-trash-can"></i></button>
+                                  </div>
+                              )}
+                              <div className="mb-2 pr-16">
+                                  <h4 className="font-bold text-slate-800 text-sm mb-0.5">{inv.userName}</h4>
+                                  <div className="text-xs text-slate-500 mb-1.5"><i className="fa-regular fa-calendar mr-1"></i> {formatDateEn(new Date(inv.date))}</div>
+                                  <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-md border border-slate-200">{inv.reason}</span>
+                              </div>
+                              <div className="font-black text-indigo-600 text-xl mt-2 border-t border-slate-100 pt-2">৳{inv.amount}</div>
+                           </div>
+                         ))
+                     )}
                   </div>
                 </div>
             );
         }
 
-        // ==========================================
-        // 🔵 WEBSITE MANAGEMENT COMPONENT
-        // ==========================================
         function WebsiteSettingsView({ config, updateConfig, packages, addPackage, updatePackage, deletePackage, complaints, deleteComplaint, reviews, updateReview, deleteReview, showAlert, showConfirm, logAction }) {
             const [activeTab, setActiveTab] = useState('general');
             
             // General Settings State
-            const [adsStatus, setAdsStatus] = useState(config.adsStatus || false);
-            const [popupUrl, setPopupUrl] = useState(config.popupUrl || '');
+            const [adsStatus, setAdsStatus] = useState(config?.adsStatus || false);
+            const [popupUrl, setPopupUrl] = useState(config?.popupUrl || '');
             const [newBanner, setNewBanner] = useState('');
+
+            // Sync if config loads late
+            useEffect(() => {
+                if(config) {
+                    setAdsStatus(config.adsStatus || false);
+                    setPopupUrl(config.popupUrl || '');
+                }
+            }, [config]);
 
             // Package State
             const [pkgName, setPkgName] = useState('');
@@ -2345,7 +2475,7 @@
 
             const addBanner = () => {
                 if(!newBanner) return;
-                const updatedBanners = [...(config.banners || []), newBanner];
+                const updatedBanners = [...(config?.banners || []), newBanner];
                 updateConfig(1, { ...config, banners: updatedBanners });
                 setNewBanner('');
                 logAction('Added new website banner');
@@ -2353,7 +2483,7 @@
             };
 
             const removeBanner = (index) => {
-                const updatedBanners = [...config.banners];
+                const updatedBanners = [...(config?.banners || [])];
                 updatedBanners.splice(index, 1);
                 updateConfig(1, { ...config, banners: updatedBanners });
                 logAction('Removed website banner');
@@ -2375,11 +2505,13 @@
 
             return (
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
+                    {/* Header */}
                     <div className="bg-gradient-to-r from-[#2d1960] to-[#5e3186] p-6 text-white">
-                        <h2 className="text-2xl font-bold flex items-center gap-3"><i className="fa-solid fa-globe text-purple-300"></i> ওয়েবসাইট কন্ট্রোল প্যানেল</h2>
-                        <p className="text-purple-200 text-sm mt-1">পাবলিক ওয়েবসাইট gotiexpress.com এর ডিজাইন ও ডেটা এখান থেকে নিয়ন্ত্রণ করুন</p>
+                        <h2 className="text-2xl font-bold flex items-center gap-3"><i className="fa-solid fa-globe text-purple-300"></i> ওয়েবসাইট কন্ট্রোল প্যানেল</h2>
+                        <p className="text-purple-200 text-sm mt-1">পাবলিক ওয়েবসাইট gotiexpress.com এর ডিজাইন ও ডেটা এখান থেকে নিয়ন্ত্রণ করুন</p>
                     </div>
 
+                    {/* Tabs */}
                     <div className="flex overflow-x-auto bg-slate-50 border-b border-slate-200 scrollbar-hide">
                         <button onClick={()=>setActiveTab('general')} className={`px-6 py-4 text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'general' ? 'border-[#5e3186] text-[#2d1960]' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}><i className="fa-solid fa-gear mr-2"></i> ব্যানার ও অ্যাডস</button>
                         <button onClick={()=>setActiveTab('packages')} className={`px-6 py-4 text-sm font-bold whitespace-nowrap transition-colors border-b-2 ${activeTab === 'packages' ? 'border-[#5e3186] text-[#2d1960]' : 'border-transparent text-slate-500 hover:bg-slate-100'}`}><i className="fa-solid fa-wifi mr-2"></i> প্যাকেজ সমূহ</button>
@@ -2388,8 +2520,10 @@
                     </div>
 
                     <div className="p-6 md:p-8">
+                        {/* TAB 1: General Settings */}
                         {activeTab === 'general' && (
                             <div className="space-y-10 animate-fade-in-up">
+                                {/* Popup Ads */}
                                 <div>
                                     <h3 className="text-lg font-bold text-[#2d1960] mb-4 border-b border-purple-100 pb-2"><i className="fa-solid fa-bullhorn mr-2 text-[#5e3186]"></i> পপ-আপ অ্যাডস (Popup Ads)</h3>
                                     <div className="bg-purple-50 border border-purple-100 p-5 rounded-2xl flex flex-col md:flex-row gap-5 items-start md:items-center">
@@ -2409,6 +2543,7 @@
                                     </div>
                                 </div>
 
+                                {/* Banner Management */}
                                 <div>
                                     <h3 className="text-lg font-bold text-[#2d1960] mb-4 border-b border-purple-100 pb-2"><i className="fa-solid fa-images mr-2 text-[#5e3186]"></i> হোমপেজ স্লাইডার ব্যানার</h3>
                                     <div className="flex flex-col md:flex-row gap-3 mb-6">
@@ -2416,8 +2551,8 @@
                                         <button onClick={addBanner} className="bg-[#5e3186] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#2d1960] transition-colors"><i className="fa-solid fa-plus mr-2"></i> ব্যানার যোগ করুন</button>
                                     </div>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                        {(!config.banners || config.banners.length === 0) && <p className="text-slate-500 text-sm">কোনো ব্যানার যুক্ত করা নেই। ডিফল্ট কালার ওয়েবসাইটের হোমপেজে দেখাবে।</p>}
-                                        {config.banners?.map((url, i) => (
+                                        {(!config?.banners || config.banners.length === 0) && <p className="text-slate-500 text-sm">কোনো ব্যানার যুক্ত করা নেই। ডিফল্ট কালার ওয়েবসাইটের হোমপেজে দেখাবে।</p>}
+                                        {(config?.banners || []).map((url, i) => (
                                             <div key={i} className="relative rounded-2xl overflow-hidden border border-slate-200 shadow-sm group aspect-video bg-slate-100">
                                                 <img src={url} alt={`Banner ${i+1}`} className="w-full h-full object-cover" />
                                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -2430,18 +2565,19 @@
                             </div>
                         )}
 
+                        {/* TAB 2: Packages */}
                         {activeTab === 'packages' && (
                             <div className="animate-fade-in-up">
                                 <form onSubmit={submitPackage} className="bg-purple-50 p-6 rounded-2xl border border-purple-100 mb-8 grid grid-cols-1 md:grid-cols-3 gap-5 items-end">
                                     <div><label className="block text-xs font-bold text-slate-700 mb-2">প্যাকেজের নাম</label><input required value={pkgName} onChange={e=>setPkgName(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-[#5e3186] outline-none bg-white" placeholder="e.g. Basic Plan" /></div>
                                     <div><label className="block text-xs font-bold text-slate-700 mb-2">স্পিড (Mbps)</label><input required value={pkgSpeed} onChange={e=>setPkgSpeed(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-[#5e3186] outline-none bg-white" placeholder="e.g. 5 Mbps" /></div>
                                     <div><label className="block text-xs font-bold text-slate-700 mb-2">মূল্য (৳)</label><input type="number" required value={pkgPrice} onChange={e=>setPkgPrice(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-[#5e3186] outline-none bg-white" placeholder="e.g. 500" /></div>
-                                    <div className="md:col-span-2"><label className="block text-xs font-bold text-slate-700 mb-2">সুবিধাসমূহ (কমা দিয়ে লিখুন)</label><input required value={pkgFeatures} onChange={e=>setPkgFeatures(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-[#5e3186] outline-none bg-white" placeholder="e.g. YouTube Free, BDIX, 24/7 Support" /></div>
+                                    <div className="md:col-span-2"><label className="block text-xs font-bold text-slate-700 mb-2">সুবিধাসমূহ (কমা দিয়ে লিখুন)</label><input required value={pkgFeatures} onChange={e=>setPkgFeatures(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-[#5e3186] outline-none bg-white" placeholder="e.g. YouTube Free, BDIX, 24/7 Support" /></div>
                                     <button type="submit" className="bg-[#2d1960] text-white p-3 rounded-xl font-bold hover:bg-[#5e3186] transition-colors"><i className="fa-solid fa-plus mr-2"></i> প্যাকেজ যোগ করুন</button>
                                 </form>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {packages.length === 0 ? <p className="text-slate-500">কোনো প্যাকেজ নেই।</p> : packages.map(pkg => (
+                                    {(packages || []).length === 0 ? <p className="text-slate-500">কোনো প্যাকেজ নেই।</p> : (packages || []).map(pkg => (
                                         <div key={pkg.id} className="bg-white border-2 border-slate-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
                                             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#2d1960] to-[#5e3186]"></div>
                                             <button onClick={() => showConfirm('প্যাকেজটি মুছে ফেলতে চান?', () => {deletePackage(pkg.id); logAction(`Deleted pkg ${pkg.name}`);})} className="absolute top-4 right-4 text-red-300 hover:text-red-500"><i className="fa-solid fa-trash-can"></i></button>
@@ -2449,7 +2585,7 @@
                                             <div className="text-3xl font-black text-[#5e3186] my-2">{pkg.speed}</div>
                                             <div className="text-lg font-bold text-slate-600 mb-4">৳ {pkg.price} <span className="text-sm font-normal">/মাস</span></div>
                                             <ul className="space-y-2 mb-4 text-sm text-slate-600">
-                                                {pkg.features.map((f, i) => <li key={i}><i className="fa-solid fa-circle-check text-green-500 mr-2"></i> {f}</li>)}
+                                                {(pkg.features || []).map((f, i) => <li key={i}><i className="fa-solid fa-circle-check text-green-500 mr-2"></i> {f}</li>)}
                                             </ul>
                                         </div>
                                     ))}
@@ -2457,10 +2593,11 @@
                             </div>
                         )}
 
+                        {/* TAB 3: Complaints */}
                         {activeTab === 'complaints' && (
                             <div className="animate-fade-in-up">
                                 <div className="space-y-4">
-                                    {complaints.length === 0 ? <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed">কোনো অভিযোগ নেই।</div> : complaints.map(c => (
+                                    {(complaints || []).length === 0 ? <div className="p-8 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed">কোনো অভিযোগ নেই।</div> : (complaints || []).map(c => (
                                         <div key={c.id} className="bg-white p-5 rounded-2xl border border-red-100 shadow-sm relative pl-16">
                                             <div className="absolute left-5 top-5 w-8 h-8 bg-red-100 text-red-500 rounded-full flex items-center justify-center"><i className="fa-solid fa-triangle-exclamation"></i></div>
                                             <button onClick={() => showConfirm('অভিযোগটি মুছে ফেলতে চান?', () => deleteComplaint(c.id))} className="absolute top-4 right-4 text-slate-300 hover:text-red-500"><i className="fa-solid fa-trash-can"></i></button>
@@ -2475,10 +2612,11 @@
                             </div>
                         )}
 
+                        {/* TAB 4: Reviews */}
                         {activeTab === 'reviews' && (
                             <div className="animate-fade-in-up">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {reviews.length === 0 ? <div className="p-8 md:col-span-2 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed">কোনো রিভিউ নেই।</div> : reviews.map(r => (
+                                    {(reviews || []).length === 0 ? <div className="p-8 md:col-span-2 text-center text-slate-500 bg-slate-50 rounded-2xl border border-dashed">কোনো রিভিউ নেই।</div> : (reviews || []).map(r => (
                                         <div key={r.id} className="bg-white p-5 rounded-2xl border border-yellow-100 shadow-sm relative">
                                             <button onClick={() => showConfirm('রিভিউটি মুছে ফেলতে চান?', () => deleteReview(r.id))} className="absolute top-4 right-4 text-slate-300 hover:text-red-500"><i className="fa-solid fa-trash-can"></i></button>
                                             <div className="flex items-center gap-1 text-yellow-400 text-sm mb-2">
@@ -2498,7 +2636,7 @@
 
         function LogsView({ logs }) {
             const [search, setSearch] = useState('');
-            const filtered = search ? logs.filter(l => l.action.toLowerCase().includes(search.toLowerCase()) || l.userName.toLowerCase().includes(search.toLowerCase())) : logs;
+            const filtered = search ? (logs || []).filter(l => l.action.toLowerCase().includes(search.toLowerCase()) || l.userName.toLowerCase().includes(search.toLowerCase())) : (logs || []);
             
             return (
                 <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm">
