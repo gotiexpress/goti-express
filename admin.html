@@ -166,7 +166,6 @@
                         setData(docs);
                         window.localStorage.setItem('goti_' + collectionName, JSON.stringify(docs));
                     } else if (initialData.length > 0 && data.length === 0) {
-                        // Only write initial data if local storage is also empty (prevent duplicate writes)
                         initialData.forEach(item => 
                             db.collection(collectionName).doc(item.id.toString()).set(item)
                               .catch(err => console.log("Init write error:", err))
@@ -348,7 +347,7 @@ const [resSettings, addResSetting, updateResSetting] = useDatabase('resellerSett
             logAction('Updated profile picture');
           };
 
-          if (!isLoggedIn) {
+          if (!isLoggedIn || !currentUser) {
             return (
               <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-4">
                 {dialog.open && <DialogBox dialog={dialog} setDialog={setDialog} />}
@@ -454,9 +453,6 @@ const [resSettings, addResSetting, updateResSetting] = useDatabase('resellerSett
                     {currentUser.role === 'admin' && (
     <SidebarItem icon="fa-chart-pie" label="বাজেট" active={currentView === 'budget'} onClick={() => {setCurrentView('budget'); setSidebarOpen(false);}} />
 )}
-{currentView === 'budget' && currentUser.role === 'admin' && (
-    <BudgetView user={currentUser} budgets={budgets} addBudget={addBudget} updateBudget={updateBudget} deleteBudget={deleteBudget} showConfirm={showConfirm} showAlert={showAlert} logAction={logAction} />
-)}
                     <SidebarItem icon="fa-sack-dollar" label="বেতন" active={currentView === 'salary'} onClick={() => {setCurrentView('salary'); setSidebarOpen(false);}} />
                     
                     <SidebarItem icon="fa-wallet" label="পেমেন্ট" active={currentView === 'payments'} hasNew={currentUser.role === 'admin' && hasNewPayment} onClick={() => {setCurrentView('payments'); setSidebarOpen(false);}} />
@@ -493,7 +489,7 @@ const [resSettings, addResSetting, updateResSetting] = useDatabase('resellerSett
                   <div className="flex items-center space-x-2 text-sm text-blue-300">
                       <i className="fa-solid fa-house text-xs"></i> <span>›</span> 
                       <span className="text-blue-100 font-medium capitalize">
-                          {currentView === 'employees' ? 'স্টাফ প্রোফাইল' : currentView === 'attendance' ? 'উপস্থিতি' : currentView === 'leave' ? 'ছুটি' : currentView === 'expenses' ? 'যাতায়াত ও অন্যান্য বিল' : currentView === 'incomes' ? 'আয়' : currentView === 'costs' ? 'ব্যয়' : currentView === 'reports' ? 'ডেইলি রিপোর্ট' : currentView === 'salary' ? 'বেতন' : currentView === 'payments' ? 'পেমেন্ট' : currentView === 'investments' ? 'ইনভেস্টমেন্ট' : currentView === 'stock' ? 'স্টক ম্যানেজমেন্ট' : currentView === 'website' ? 'ওয়েবসাইট কন্ট্রোল' : currentView === 'logs' ? 'লগ' : 'ড্যাশবোর্ড'}
+                          {currentView === 'employees' ? 'স্টাফ প্রোফাইল' : currentView === 'attendance' ? 'উপস্থিতি' : currentView === 'leave' ? 'ছুটি' : currentView === 'expenses' ? 'যাতায়াত ও অন্যান্য বিল' : currentView === 'incomes' ? 'আয়' : currentView === 'costs' ? 'ব্যয়' : currentView === 'reports' ? 'ডেইলি রিপোর্ট' : currentView === 'salary' ? 'বেতন' : currentView === 'payments' ? 'পেমেন্ট' : currentView === 'investments' ? 'ইনভেস্টমেন্ট' : currentView === 'stock' ? 'স্টক ম্যানেজমেন্ট' : currentView === 'website' ? 'ওয়েবসাইট কন্ট্রোল' : currentView === 'logs' ? 'লগ' : currentView === 'budget' ? 'বাজেট' : 'ড্যাশবোর্ড'}
                       </span>
                   </div>
                   <div className="flex items-center space-x-5">
@@ -517,7 +513,7 @@ const [resSettings, addResSetting, updateResSetting] = useDatabase('resellerSett
                   <div className="flex items-center gap-2">
                       <img src="https://i.ibb.co.com/4Zy9b057/black-goti.png" alt="Logo" className="h-6 object-contain bg-white rounded px-1" />
                       <span className="font-bold text-blue-100 capitalize">
-                          {currentView === 'employees' ? 'স্টাফ' : currentView === 'attendance' ? 'উপস্থিতি' : currentView === 'leave' ? 'ছুটি' : currentView === 'expenses' ? 'বিল' : currentView === 'incomes' ? 'আয়' : currentView === 'costs' ? 'ব্যয়' : currentView === 'reports' ? 'রিপোর্ট' : currentView === 'salary' ? 'বেতন' : currentView === 'payments' ? 'পেমেন্ট' : currentView === 'investments' ? 'ইনভেস্টমেন্ট' : currentView === 'stock' ? 'স্টক' : currentView === 'website' ? 'ওয়েবসাইট কন্ট্রোল' : currentView === 'logs' ? 'লগ' : 'ড্যাশবোর্ড'}
+                          {currentView === 'employees' ? 'স্টাফ' : currentView === 'attendance' ? 'উপস্থিতি' : currentView === 'leave' ? 'ছুটি' : currentView === 'expenses' ? 'বিল' : currentView === 'incomes' ? 'আয়' : currentView === 'costs' ? 'ব্যয়' : currentView === 'reports' ? 'রিপোর্ট' : currentView === 'salary' ? 'বেতন' : currentView === 'payments' ? 'পেমেন্ট' : currentView === 'investments' ? 'ইনভেস্টমেন্ট' : currentView === 'stock' ? 'স্টক' : currentView === 'website' ? 'ওয়েবসাইট কন্ট্রোল' : currentView === 'logs' ? 'লগ' : currentView === 'budget' ? 'বাজেট' : 'ড্যাশবোর্ড'}
                       </span>
                   </div>
                 </header>
@@ -546,6 +542,10 @@ const [resSettings, addResSetting, updateResSetting] = useDatabase('resellerSett
 
                     {currentView === 'reports' && (currentUser.role === 'admin' || currentUser.canViewReports) && (
                         <ReportView user={currentUser} reports={reports} addReport={addReportWithLog} deleteReport={deleteReport} showConfirm={showConfirm} showAlert={showAlert} logAction={logAction} />
+                    )}
+                    
+                    {currentView === 'budget' && currentUser.role === 'admin' && (
+                        <BudgetView user={currentUser} budgets={budgets} addBudget={addBudget} updateBudget={updateBudget} deleteBudget={deleteBudget} showConfirm={showConfirm} showAlert={showAlert} logAction={logAction} />
                     )}
                     
                     {currentView === 'salary' && <SalaryView user={currentUser} users={users} salaries={salaries} addSalary={addSalaryWithLog} updateSalary={updateSalary} deleteSalary={deleteSalary} showAlert={showAlert} showConfirm={showConfirm} logAction={logAction} />}
@@ -2052,7 +2052,8 @@ const [resSettings, addResSetting, updateResSetting] = useDatabase('resellerSett
             </div>
           );
         }
-function BudgetView({ user, budgets, addBudget, updateBudget, deleteBudget, showConfirm, showAlert, logAction }) {
+
+        function BudgetView({ user, budgets, addBudget, updateBudget, deleteBudget, showConfirm, showAlert, logAction }) {
             const [activeTab, setActiveTab] = useState('dashboard');
             const today = new Date();
             const [filterMonth, setFilterMonth] = useState(`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`);
@@ -2118,7 +2119,7 @@ function BudgetView({ user, budgets, addBudget, updateBudget, deleteBudget, show
                             <h2 className="text-2xl font-bold flex items-center gap-3"><i className="fa-solid fa-chart-pie text-blue-200"></i> মাসিক বাজেট কন্ট্রোল</h2>
                             <p className="text-blue-100 text-sm mt-1">প্রতি মাসের সম্ভাব্য খরচ নির্ধারণ করুন এবং ড্যাশবোর্ডে নজর রাখুন</p>
                         </div>
-                        <input type="month" value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} className="bg-white/20 text-white border border-white/30 p-2 rounded-xl outline-none font-bold" />
+                        <input type="month" value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} className="bg-white/20 text-white border border-white/30 p-2 rounded-xl outline-none font-bold cursor-pointer" />
                     </div>
 
                     <div className="flex border-b border-slate-200 bg-slate-50 overflow-x-auto">
@@ -2147,7 +2148,7 @@ function BudgetView({ user, budgets, addBudget, updateBudget, deleteBudget, show
                                             <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">বিদ্যুৎ বিল</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.electricity}</p></div>
                                             <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">রিসেলার বিল</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.resellerBill}</p></div>
                                             <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">স্টাফ বেতন</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.staffSalary}</p></div>
-                                            <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">জয়েন্ট/স্প্লেসিং</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.splicing}</p></div>
+                                            <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">জয়েন্ট/স্প্লেসিং</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.splicing}</p></div>
                                             <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">অফিস খরচ</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.officeCost}</p></div>
                                         </div>
                                         <p className="text-xs text-slate-400 mt-4 text-center">সর্বশেষ আপডেট: {new Date(currentBudget.updatedAt).toLocaleString('en-GB')} (By: {currentBudget.updatedBy})</p>
@@ -2163,7 +2164,7 @@ function BudgetView({ user, budgets, addBudget, updateBudget, deleteBudget, show
                                 <div><label className="block text-xs font-bold text-slate-700 mb-2">বিদ্যুৎ বিল (৳)</label><input type="number" required value={electricity} onChange={e=>setElectricity(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                                 <div><label className="block text-xs font-bold text-slate-700 mb-2">রিসেলার বিল (৳)</label><input type="number" required value={resellerBill} onChange={e=>setResellerBill(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                                 <div><label className="block text-xs font-bold text-slate-700 mb-2">স্টাফ বেতন (৳)</label><input type="number" required value={staffSalary} onChange={e=>setStaffSalary(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                                <div><label className="block text-xs font-bold text-slate-700 mb-2">জয়েন্ট/স্প্লেসিং খরচ (৳)</label><input type="number" required value={splicing} onChange={e=>setSplicing(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                                <div><label className="block text-xs font-bold text-slate-700 mb-2">জয়েন্ট/স্প্লেসিং খরচ (৳)</label><input type="number" required value={splicing} onChange={e=>setSplicing(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                                 <div><label className="block text-xs font-bold text-slate-700 mb-2">অফিস খরচ (৳)</label><input type="number" required value={officeCost} onChange={e=>setOfficeCost(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
                                 
                                 <div className="md:col-span-3 mt-4">
@@ -2175,6 +2176,7 @@ function BudgetView({ user, budgets, addBudget, updateBudget, deleteBudget, show
                 </div>
             );
         }
+
         function SalaryView({ user, users, salaries, addSalary, updateSalary, deleteSalary, showAlert, showConfirm, logAction }) {
             // নতুন ডেটাবেস হুকগুলো
             const [advances, addAdvance, , deleteAdvance] = useDatabase('advances', []);
@@ -3438,129 +3440,7 @@ function BudgetView({ user, budgets, addBudget, updateBudget, deleteBudget, show
                 </div>
             );
         }
-function BudgetView({ user, budgets, addBudget, updateBudget, deleteBudget, showConfirm, showAlert, logAction }) {
-            const [activeTab, setActiveTab] = React.useState('dashboard');
-            const today = new Date();
-            const [filterMonth, setFilterMonth] = React.useState(`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`);
 
-            // Form states
-            const [kisti, setKisti] = React.useState('');
-            const [bandwidth, setBandwidth] = React.useState('');
-            const [electricity, setElectricity] = React.useState('');
-            const [resellerBill, setResellerBill] = React.useState('');
-            const [staffSalary, setStaffSalary] = React.useState('');
-            const [splicing, setSplicing] = React.useState('');
-            const [officeCost, setOfficeCost] = React.useState('');
-
-            const currentBudget = (budgets || []).find(b => b.month === filterMonth);
-
-            const handleSaveBudget = (e) => {
-                e.preventDefault();
-                const budgetData = {
-                    month: filterMonth,
-                    kisti: parseFloat(kisti) || 0,
-                    bandwidth: parseFloat(bandwidth) || 0,
-                    electricity: parseFloat(electricity) || 0,
-                    resellerBill: parseFloat(resellerBill) || 0,
-                    staffSalary: parseFloat(staffSalary) || 0,
-                    splicing: parseFloat(splicing) || 0,
-                    officeCost: parseFloat(officeCost) || 0,
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: user.name
-                };
-
-                if (currentBudget) {
-                    updateBudget(currentBudget.id, budgetData);
-                    logAction(`Updated budget for ${filterMonth}`);
-                    showAlert('বাজেট আপডেট হয়েছে!');
-                } else {
-                    addBudget({ id: Date.now(), ...budgetData });
-                    logAction(`Set budget for ${filterMonth}`);
-                    showAlert('নতুন বাজেট এন্ট্রি হয়েছে!');
-                }
-                setActiveTab('dashboard');
-            };
-
-            React.useEffect(() => {
-                if (currentBudget && activeTab === 'entry') {
-                    setKisti(currentBudget.kisti);
-                    setBandwidth(currentBudget.bandwidth);
-                    setElectricity(currentBudget.electricity);
-                    setResellerBill(currentBudget.resellerBill);
-                    setStaffSalary(currentBudget.staffSalary);
-                    setSplicing(currentBudget.splicing);
-                    setOfficeCost(currentBudget.officeCost);
-                } else if (!currentBudget && activeTab === 'entry') {
-                    setKisti(''); setBandwidth(''); setElectricity(''); setResellerBill(''); setStaffSalary(''); setSplicing(''); setOfficeCost('');
-                }
-            }, [currentBudget, activeTab]);
-
-            const totalBudget = currentBudget ? (currentBudget.kisti + currentBudget.bandwidth + currentBudget.electricity + currentBudget.resellerBill + currentBudget.staffSalary + currentBudget.splicing + currentBudget.officeCost) : 0;
-
-            return (
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-slate-200">
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white flex justify-between items-center">
-                        <div>
-                            <h2 className="text-2xl font-bold flex items-center gap-3"><i className="fa-solid fa-chart-pie text-blue-200"></i> মাসিক বাজেট কন্ট্রোল</h2>
-                            <p className="text-blue-100 text-sm mt-1">প্রতি মাসের সম্ভাব্য খরচ নির্ধারণ করুন এবং ড্যাশবোর্ডে নজর রাখুন</p>
-                        </div>
-                        <input type="month" value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} className="bg-white/20 text-white border border-white/30 p-2 rounded-xl outline-none font-bold cursor-pointer" />
-                    </div>
-
-                    <div className="flex border-b border-slate-200 bg-slate-50 overflow-x-auto">
-                        <button onClick={()=>setActiveTab('dashboard')} className={`whitespace-nowrap px-6 py-4 font-bold text-sm ${activeTab === 'dashboard' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:bg-slate-100'}`}><i className="fa-solid fa-chart-bar mr-2"></i> বাজেট ড্যাশবোর্ড</button>
-                        <button onClick={()=>setActiveTab('entry')} className={`whitespace-nowrap px-6 py-4 font-bold text-sm ${activeTab === 'entry' ? 'border-b-2 border-blue-600 text-blue-600' : 'text-slate-500 hover:bg-slate-100'}`}><i className="fa-solid fa-pen-to-square mr-2"></i> বাজেট এন্ট্রি</button>
-                    </div>
-
-                    <div className="p-6 md:p-8">
-                        {activeTab === 'dashboard' && (
-                            <div className="animate-fade-in-up">
-                                {!currentBudget ? (
-                                    <div className="text-center p-10 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
-                                        <i className="fa-solid fa-folder-open text-4xl text-slate-300 mb-3"></i>
-                                        <p className="text-slate-500 font-medium">এই মাসের কোনো বাজেট সেট করা হয়নি।</p>
-                                        <button onClick={()=>setActiveTab('entry')} className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-blue-700">বাজেট এন্ট্রি করুন</button>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <div className="bg-blue-50 border border-blue-100 p-6 rounded-2xl mb-6 text-center">
-                                            <p className="text-blue-800 text-sm font-bold uppercase mb-1">{filterMonth} মাসের মোট বরাদ্দকৃত বাজেট</p>
-                                            <p className="text-4xl font-black text-blue-600">৳{totalBudget.toLocaleString()}</p>
-                                        </div>
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">কিস্তি</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.kisti}</p></div>
-                                            <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">ব্যান্ডউইথ বিল</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.bandwidth}</p></div>
-                                            <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">বিদ্যুৎ বিল</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.electricity}</p></div>
-                                            <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">রিসেলার বিল</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.resellerBill}</p></div>
-                                            <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">স্টাফ বেতন</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.staffSalary}</p></div>
-                                            <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">জয়েন্ট/স্প্লেসিং</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.splicing}</p></div>
-                                            <div className="border border-slate-200 p-4 rounded-xl bg-white shadow-sm"><p className="text-xs text-slate-500 font-bold">অফিস খরচ</p><p className="text-lg font-bold text-slate-800">৳{currentBudget.officeCost}</p></div>
-                                        </div>
-                                        <p className="text-xs text-slate-400 mt-4 text-center">সর্বশেষ আপডেট: {new Date(currentBudget.updatedAt).toLocaleString('en-GB')} (By: {currentBudget.updatedBy})</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {activeTab === 'entry' && (
-                            <form onSubmit={handleSaveBudget} className="animate-fade-in-up grid grid-cols-1 md:grid-cols-3 gap-5">
-                                <div><label className="block text-xs font-bold text-slate-700 mb-2">কিস্তি (৳)</label><input type="number" required value={kisti} onChange={e=>setKisti(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                                <div><label className="block text-xs font-bold text-slate-700 mb-2">ব্যান্ডউইথ বিল (৳)</label><input type="number" required value={bandwidth} onChange={e=>setBandwidth(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                                <div><label className="block text-xs font-bold text-slate-700 mb-2">বিদ্যুৎ বিল (৳)</label><input type="number" required value={electricity} onChange={e=>setElectricity(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                                <div><label className="block text-xs font-bold text-slate-700 mb-2">রিসেলার বিল (৳)</label><input type="number" required value={resellerBill} onChange={e=>setResellerBill(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                                <div><label className="block text-xs font-bold text-slate-700 mb-2">স্টাফ বেতন (৳)</label><input type="number" required value={staffSalary} onChange={e=>setStaffSalary(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                                <div><label className="block text-xs font-bold text-slate-700 mb-2">জয়েন্ট/স্প্লেসিং খরচ (৳)</label><input type="number" required value={splicing} onChange={e=>setSplicing(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                                <div><label className="block text-xs font-bold text-slate-700 mb-2">অফিস খরচ (৳)</label><input type="number" required value={officeCost} onChange={e=>setOfficeCost(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                                
-                                <div className="md:col-span-3 mt-4">
-                                    <button type="submit" className="bg-blue-600 text-white px-8 py-3.5 rounded-xl font-bold shadow-lg hover:bg-blue-700 w-full md:w-auto"><i className="fa-solid fa-save mr-2"></i> বাজেট সেভ করুন</button>
-                                </div>
-                            </form>
-                        )}
-                    </div>
-                </div>
-            );
-        }
         function LogsView({ logs }) {
             const [search, setSearch] = useState('');
             const filtered = search ? (logs || []).filter(l => l.action.toLowerCase().includes(search.toLowerCase()) || l.userName.toLowerCase().includes(search.toLowerCase())) : (logs || []);
