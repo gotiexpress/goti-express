@@ -2670,393 +2670,457 @@
 
         // ============== BudgetView (simplified) ==============
         function BudgetView({ user, budgets, addBudget, updateBudget, deleteBudget, showConfirm, showAlert, logAction }) {
-            const [selectedMonth, setSelectedMonth] = useState(formatDateISO(new Date()).substring(0,7));
-            const [kisti, setKisti] = useState('');
-            const [bandwidth, setBandwidth] = useState('');
-            const [electricity, setElectricity] = useState('');
-            const [resellerBill, setResellerBill] = useState('');
-            const [staffSalary, setStaffSalary] = useState('');
-            const [splicing, setSplicing] = useState('');
-            const [officeCost, setOfficeCost] = useState('');
-            
-            const currentBudget = (budgets || []).find(b => b.month === selectedMonth);
-            
-            React.useEffect(() => {
-                if(currentBudget) {
-                    setKisti(currentBudget.kisti);
-                    setBandwidth(currentBudget.bandwidth);
-                    setElectricity(currentBudget.electricity);
-                    setResellerBill(currentBudget.resellerBill);
-                    setStaffSalary(currentBudget.staffSalary);
-                    setSplicing(currentBudget.splicing);
-                    setOfficeCost(currentBudget.officeCost);
-                } else {
-                    setKisti(''); setBandwidth(''); setElectricity(''); setResellerBill(''); setStaffSalary(''); setSplicing(''); setOfficeCost('');
-                }
-            }, [currentBudget, selectedMonth]);
+    const [selectedMonth, setSelectedMonth] = useState(formatDateISO(new Date()).substring(0,7));
+    const [kisti, setKisti] = useState('');
+    const [bandwidth, setBandwidth] = useState('');
+    const [electricity, setElectricity] = useState('');
+    const [resellerBill, setResellerBill] = useState('');
+    const [staffSalary, setStaffSalary] = useState('');
+    const [splicing, setSplicing] = useState('');
+    const [officeCost, setOfficeCost] = useState('');
+    
+    const currentBudget = (budgets || []).find(b => b.month === selectedMonth);
+    
+    React.useEffect(() => {
+        if(currentBudget) {
+            setKisti(currentBudget.kisti);
+            setBandwidth(currentBudget.bandwidth);
+            setElectricity(currentBudget.electricity);
+            setResellerBill(currentBudget.resellerBill);
+            setStaffSalary(currentBudget.staffSalary);
+            setSplicing(currentBudget.splicing);
+            setOfficeCost(currentBudget.officeCost);
+        } else {
+            setKisti(''); setBandwidth(''); setElectricity(''); setResellerBill(''); setStaffSalary(''); setSplicing(''); setOfficeCost('');
+        }
+    }, [currentBudget, selectedMonth]);
 
-            const handleSave = (e) => {
-                e.preventDefault();
-                const data = {
-                    month: selectedMonth,
-                    kisti: parseFloat(kisti) || 0,
-                    bandwidth: parseFloat(bandwidth) || 0,
-                    electricity: parseFloat(electricity) || 0,
-                    resellerBill: parseFloat(resellerBill) || 0,
-                    staffSalary: parseFloat(staffSalary) || 0,
-                    splicing: parseFloat(splicing) || 0,
-                    officeCost: parseFloat(officeCost) || 0,
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: user.name
-                };
-                if(currentBudget) {
-                    updateBudget(currentBudget.id, data);
-                    logAction(`Updated budget for ${selectedMonth}`);
-                    showAlert('বাজেট আপডেট হয়েছে!');
-                } else {
-                    addBudget({ id: Date.now(), ...data });
-                    logAction(`Set budget for ${selectedMonth}`);
-                    showAlert('নতুন বাজেট সেভ হয়েছে!');
-                }
-            };
+    const handleSave = (e) => {
+        e.preventDefault();
+        const data = {
+            month: selectedMonth,
+            kisti: parseFloat(kisti) || 0,
+            bandwidth: parseFloat(bandwidth) || 0,
+            electricity: parseFloat(electricity) || 0,
+            resellerBill: parseFloat(resellerBill) || 0,
+            staffSalary: parseFloat(staffSalary) || 0,
+            splicing: parseFloat(splicing) || 0,
+            officeCost: parseFloat(officeCost) || 0,
+            updatedAt: new Date().toISOString(),
+            updatedBy: user.name
+        };
+        if(currentBudget) {
+            updateBudget(currentBudget.id, data);
+            logAction(`Updated budget for ${selectedMonth}`);
+            showAlert('বাজেট আপডেট হয়েছে!');
+        } else {
+            addBudget({ id: Date.now(), ...data });
+            logAction(`Set budget for ${selectedMonth}`);
+            showAlert('নতুন বাজেট সেভ হয়েছে!');
+        }
+    };
 
-            return (
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                        <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                            <i className="fa-solid fa-chart-pie text-blue-500"></i> মাসিক বাজেট
+    const totalBudget = currentBudget ? 
+        (parseFloat(currentBudget.kisti)||0) + (parseFloat(currentBudget.bandwidth)||0) + 
+        (parseFloat(currentBudget.electricity)||0) + (parseFloat(currentBudget.resellerBill)||0) + 
+        (parseFloat(currentBudget.staffSalary)||0) + (parseFloat(currentBudget.splicing)||0) + 
+        (parseFloat(currentBudget.officeCost)||0) : 0;
+
+    return (
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            {/* Header with gradient */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h2 className="text-2xl font-bold flex items-center gap-2">
+                            <i className="fa-solid fa-chart-pie text-blue-200"></i> মাসিক বাজেট কন্ট্রোল
                         </h2>
-                        <input type="month" value={selectedMonth} onChange={e=>setSelectedMonth(e.target.value)} className="border border-slate-300 rounded-xl p-2 focus:ring-2 focus:ring-blue-500 outline-none" />
+                        <p className="text-blue-100 text-sm mt-1">প্রতি মাসের সম্ভাব্য খরচ নির্ধারণ করুন এবং নজর রাখুন</p>
                     </div>
+                    <input type="month" value={selectedMonth} onChange={e=>setSelectedMonth(e.target.value)} className="bg-white/20 text-white border border-white/30 p-2 rounded-xl outline-none font-bold cursor-pointer" />
+                </div>
+            </div>
 
-                    <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div><label className="block text-xs font-bold text-slate-700 mb-1">কিস্তি (৳)</label><input type="number" value={kisti} onChange={e=>setKisti(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                        <div><label className="block text-xs font-bold text-slate-700 mb-1">ব্যান্ডউইথ বিল (৳)</label><input type="number" value={bandwidth} onChange={e=>setBandwidth(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                        <div><label className="block text-xs font-bold text-slate-700 mb-1">বিদ্যুৎ বিল (৳)</label><input type="number" value={electricity} onChange={e=>setElectricity(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                        <div><label className="block text-xs font-bold text-slate-700 mb-1">রিসেলার বিল (৳)</label><input type="number" value={resellerBill} onChange={e=>setResellerBill(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                        <div><label className="block text-xs font-bold text-slate-700 mb-1">স্টাফ বেতন (৳)</label><input type="number" value={staffSalary} onChange={e=>setStaffSalary(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                        <div><label className="block text-xs font-bold text-slate-700 mb-1">জয়েন্ট/স্প্লেসিং (৳)</label><input type="number" value={splicing} onChange={e=>setSplicing(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                        <div><label className="block text-xs font-bold text-slate-700 mb-1">অফিস খরচ (৳)</label><input type="number" value={officeCost} onChange={e=>setOfficeCost(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
-                        <div className="md:col-span-3 flex gap-2 mt-2">
-                            <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition">সেভ করুন</button>
+            {/* Summary Cards */}
+            <div className="p-6">
+                {currentBudget ? (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl text-center">
+                            <p className="text-xs text-blue-600 font-bold uppercase">মোট বাজেট</p>
+                            <p className="text-2xl font-black text-blue-700">৳{totalBudget.toLocaleString()}</p>
                         </div>
-                    </form>
+                        <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center">
+                            <p className="text-xs text-slate-500 font-bold uppercase">কিস্তি</p>
+                            <p className="text-xl font-bold text-slate-800">৳{currentBudget.kisti}</p>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center">
+                            <p className="text-xs text-slate-500 font-bold uppercase">ব্যান্ডউইথ</p>
+                            <p className="text-xl font-bold text-slate-800">৳{currentBudget.bandwidth}</p>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center">
+                            <p className="text-xs text-slate-500 font-bold uppercase">বিদ্যুৎ বিল</p>
+                            <p className="text-xl font-bold text-slate-800">৳{currentBudget.electricity}</p>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center">
+                            <p className="text-xs text-slate-500 font-bold uppercase">রিসেলার বিল</p>
+                            <p className="text-xl font-bold text-slate-800">৳{currentBudget.resellerBill}</p>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center">
+                            <p className="text-xs text-slate-500 font-bold uppercase">স্টাফ বেতন</p>
+                            <p className="text-xl font-bold text-slate-800">৳{currentBudget.staffSalary}</p>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center">
+                            <p className="text-xs text-slate-500 font-bold uppercase">জয়েন্ট/স্প্লেসিং</p>
+                            <p className="text-xl font-bold text-slate-800">৳{currentBudget.splicing}</p>
+                        </div>
+                        <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-center">
+                            <p className="text-xs text-slate-500 font-bold uppercase">অফিস খরচ</p>
+                            <p className="text-xl font-bold text-slate-800">৳{currentBudget.officeCost}</p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="text-center p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-300 mb-6">
+                        <i className="fa-solid fa-folder-open text-4xl text-slate-300 mb-3"></i>
+                        <p className="text-slate-500 font-medium">এই মাসের কোনো বাজেট সেট করা হয়নি।</p>
+                    </div>
+                )}
 
-                    <div className="mt-8">
-                        <h3 className="font-bold text-slate-800 mb-4 border-b pb-2">বাজেট হিস্টরি</h3>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-slate-50 text-slate-500 text-xs uppercase border-b">
-                                        <th className="p-3">মাস</th>
-                                        <th className="p-3">মোট বাজেট</th>
-                                        <th className="p-3">আপডেট</th>
-                                        <th className="p-3 text-center">অ্যাকশন</th>
+                {/* Entry Form */}
+                <h3 className="font-bold text-slate-800 mb-4 border-b pb-2"><i className="fa-solid fa-pen-to-square mr-2 text-blue-500"></i> বাজেট এন্ট্রি করুন</h3>
+                <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">কিস্তি (৳)</label><input type="number" value={kisti} onChange={e=>setKisti(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">ব্যান্ডউইথ বিল (৳)</label><input type="number" value={bandwidth} onChange={e=>setBandwidth(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">বিদ্যুৎ বিল (৳)</label><input type="number" value={electricity} onChange={e=>setElectricity(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">রিসেলার বিল (৳)</label><input type="number" value={resellerBill} onChange={e=>setResellerBill(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">স্টাফ বেতন (৳)</label><input type="number" value={staffSalary} onChange={e=>setStaffSalary(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">জয়েন্ট/স্প্লেসিং (৳)</label><input type="number" value={splicing} onChange={e=>setSplicing(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                    <div><label className="block text-xs font-bold text-slate-700 mb-1">অফিস খরচ (৳)</label><input type="number" value={officeCost} onChange={e=>setOfficeCost(e.target.value)} className="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" /></div>
+                    <div className="md:col-span-3 flex gap-2 mt-2">
+                        <button type="submit" className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-md">সেভ করুন</button>
+                    </div>
+                </form>
+
+                {/* History Table */}
+                <div className="mt-8">
+                    <h3 className="font-bold text-slate-800 mb-4 border-b pb-2"><i className="fa-solid fa-clock-rotate-left mr-2 text-slate-400"></i> বাজেট হিস্টরি</h3>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50 text-slate-500 text-xs uppercase border-b">
+                                    <th className="p-3">মাস</th>
+                                    <th className="p-3">মোট বাজেট</th>
+                                    <th className="p-3">আপডেট</th>
+                                    <th className="p-3 text-center">অ্যাকশন</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {(budgets || []).sort((a,b) => b.month.localeCompare(a.month)).map(b => (
+                                    <tr key={b.id} className="hover:bg-slate-50">
+                                        <td className="p-3 font-bold">{b.month}</td>
+                                        <td className="p-3">৳{(b.kisti+b.bandwidth+b.electricity+b.resellerBill+b.staffSalary+b.splicing+b.officeCost).toLocaleString()}</td>
+                                        <td className="p-3 text-xs text-slate-500">{new Date(b.updatedAt).toLocaleString('en-GB')}</td>
+                                        <td className="p-3 text-center">
+                                            <button onClick={()=>setSelectedMonth(b.month)} className="text-blue-500 hover:text-blue-700 mx-1"><i className="fa-solid fa-pen"></i></button>
+                                            <button onClick={()=>showConfirm('ডিলিট করবেন?', ()=>{deleteBudget(b.id); logAction(`Deleted budget ${b.month}`);})} className="text-red-400 hover:text-red-600 mx-1"><i className="fa-solid fa-trash-can"></i></button>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {(budgets || []).sort((a,b) => b.month.localeCompare(a.month)).map(b => (
-                                        <tr key={b.id} className="hover:bg-slate-50">
-                                            <td className="p-3 font-bold">{b.month}</td>
-                                            <td className="p-3">৳{(b.kisti+b.bandwidth+b.electricity+b.resellerBill+b.staffSalary+b.splicing+b.officeCost).toLocaleString()}</td>
-                                            <td className="p-3 text-xs text-slate-500">{new Date(b.updatedAt).toLocaleString('en-GB')}</td>
-                                            <td className="p-3 text-center">
-                                                <button onClick={()=>setSelectedMonth(b.month)} className="text-blue-500 hover:text-blue-700 mx-1"><i className="fa-solid fa-pen"></i></button>
-                                                <button onClick={()=>showConfirm('ডিলিট করবেন?', ()=>{deleteBudget(b.id); logAction(`Deleted budget ${b.month}`);})} className="text-red-400 hover:text-red-600 mx-1"><i className="fa-solid fa-trash-can"></i></button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                    {(budgets || []).length === 0 && <tr><td colSpan="4" className="p-6 text-center text-slate-400">কোনো বাজেট রেকর্ড নেই</td></tr>}
-                                </tbody>
-                            </table>
-                        </div>
+                                ))}
+                                {(budgets || []).length === 0 && <tr><td colSpan="4" className="p-6 text-center text-slate-400">কোনো বাজেট রেকর্ড নেই</td></tr>}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            );
-        }
+            </div>
+        </div>
+    );
+}
 
         // ============== SalaryView (modified for reseller access) ==============
-        function SalaryView({ user, users, salaries, addSalary, updateSalary, deleteSalary, showAlert, showConfirm, logAction }) {
-            const [advances, addAdvance, , deleteAdvance] = useDatabase('advances', []);
-            const [resCustomers, addResCustomer, updateResCustomer, deleteResCustomer] = useDatabase('resellerCustomers', []);
-            const [resSettings, addResSetting, updateResSetting] = useDatabase('resellerSettings', []);
+       function SalaryView({ user, users, salaries, addSalary, updateSalary, deleteSalary, showAlert, showConfirm, logAction }) {
+    const [advances, addAdvance, , deleteAdvance] = useDatabase('advances', []);
+    const [resCustomers, addResCustomer, updateResCustomer, deleteResCustomer] = useDatabase('resellerCustomers', []);
+    const [resSettings, addResSetting, updateResSetting] = useDatabase('resellerSettings', []);
 
-            const [activeTab, setActiveTab] = useState('staff');
-            const [selectedUserId, setSelectedUserId] = useState(user.role === 'admin' ? '' : user.id.toString());
-            
-            const today = new Date();
-            const [filterMonth, setFilterMonth] = useState(`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`);
+    const [activeTab, setActiveTab] = useState(user.canViewReseller && user.role !== 'admin' ? 'reseller' : 'staff');
+    const [selectedUserId, setSelectedUserId] = useState(user.role === 'admin' ? '' : user.id.toString());
+    
+    const today = new Date();
+    const [filterMonth, setFilterMonth] = useState(`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`);
 
-            const staffList = (users || []).filter(u => u.role !== 'admin');
-            const selectedUser = users.find(u => u.id.toString() === selectedUserId);
-            const canViewReseller = user.role === 'admin' || user.canViewReseller;
+    const staffList = (users || []).filter(u => u.role !== 'admin');
+    const selectedUser = users.find(u => u.id.toString() === selectedUserId);
+    const canViewReseller = user.role === 'admin' || user.canViewReseller;
 
-            const currentSalary = (salaries || []).find(s => s.userId.toString() === selectedUserId && s.month === filterMonth);
-            const [baseSalary, setBaseSalary] = useState('');
-            const [deductions, setDeductions] = useState('');
-            const [deductionReason, setDeductionReason] = useState('');
+    const currentSalary = (salaries || []).find(s => s.userId.toString() === selectedUserId && s.month === filterMonth);
+    const [baseSalary, setBaseSalary] = useState('');
+    const [deductions, setDeductions] = useState('');
+    const [deductionReason, setDeductionReason] = useState('');
 
-            React.useEffect(() => {
-                if(currentSalary) {
-                    setBaseSalary(currentSalary.baseSalary);
-                    setDeductions(currentSalary.deductions);
-                    setDeductionReason(currentSalary.deductionReason || '');
-                } else {
-                    setBaseSalary(''); setDeductions(''); setDeductionReason('');
-                }
-            }, [currentSalary, selectedUserId, filterMonth]);
+    React.useEffect(() => {
+        if(currentSalary) {
+            setBaseSalary(currentSalary.baseSalary);
+            setDeductions(currentSalary.deductions);
+            setDeductionReason(currentSalary.deductionReason || '');
+        } else {
+            setBaseSalary(''); setDeductions(''); setDeductionReason('');
+        }
+    }, [currentSalary, selectedUserId, filterMonth]);
 
-            const myAdvances = (advances || []).filter(a => a.userId.toString() === selectedUserId && a.month === filterMonth && a.type === 'salary');
-            const totalAdvance = myAdvances.reduce((sum, a) => sum + (Number(a.amount)||0), 0);
-            const netSalary = (parseFloat(baseSalary)||0) - (parseFloat(deductions)||0) - totalAdvance;
+    const myAdvances = (advances || []).filter(a => a.userId.toString() === selectedUserId && a.month === filterMonth && a.type === 'salary');
+    const totalAdvance = myAdvances.reduce((sum, a) => sum + (Number(a.amount)||0), 0);
+    const netSalary = (parseFloat(baseSalary)||0) - (parseFloat(deductions)||0) - totalAdvance;
 
-            const handleSaveSalaryBase = (e) => {
-                e.preventDefault();
-                if(!selectedUser) return;
-                if(currentSalary) {
-                    updateSalary(currentSalary.id, { baseSalary: parseFloat(baseSalary)||0, deductions: parseFloat(deductions)||0, deductionReason, netSalary });
-                    logAction(`Updated salary base for ${selectedUser.name}`);
-                    showAlert('বেতন আপডেট হয়েছে!');
-                } else {
-                    addSalary({ id: Date.now(), userId: selectedUser.id, userName: selectedUser.name, month: filterMonth, baseSalary: parseFloat(baseSalary)||0, deductions: parseFloat(deductions)||0, deductionReason, additions: 0, status: 'পেন্ডিং', netSalary });
-                    logAction(`Set salary base for ${selectedUser.name}`);
-                    showAlert('বেতন সেট করা হয়েছে!');
-                }
-            };
+    const handleSaveSalaryBase = (e) => {
+        e.preventDefault();
+        if(!selectedUser) return;
+        if(currentSalary) {
+            updateSalary(currentSalary.id, { baseSalary: parseFloat(baseSalary)||0, deductions: parseFloat(deductions)||0, deductionReason, netSalary });
+            logAction(`Updated salary base for ${selectedUser.name}`);
+            showAlert('বেতন আপডেট হয়েছে!');
+        } else {
+            addSalary({ id: Date.now(), userId: selectedUser.id, userName: selectedUser.name, month: filterMonth, baseSalary: parseFloat(baseSalary)||0, deductions: parseFloat(deductions)||0, deductionReason, additions: 0, status: 'পেন্ডিং', netSalary });
+            logAction(`Set salary base for ${selectedUser.name}`);
+            showAlert('বেতন সেট করা হয়েছে!');
+        }
+    };
 
-            const [advDate, setAdvDate] = useState(formatDateISO(new Date()));
-            const [advAmount, setAdvAmount] = useState('');
-            const [advReason, setAdvReason] = useState('');
+    const [advDate, setAdvDate] = useState(formatDateISO(new Date()));
+    const [advAmount, setAdvAmount] = useState('');
+    const [advReason, setAdvReason] = useState('');
 
-            const handleAddAdvance = (e, type) => {
-                e.preventDefault();
-                if(!selectedUser) return;
-                addAdvance({ id: Date.now(), userId: selectedUser.id, userName: selectedUser.name, month: filterMonth, date: advDate, amount: parseFloat(advAmount), reason: advReason, type: type });
-                setAdvAmount(''); setAdvReason('');
-                logAction(`Added ${type} withdrawal for ${selectedUser.name}`);
-                showAlert('জমা/উত্তোলন এন্ট্রি হয়েছে!');
-            };
+    const handleAddAdvance = (e, type) => {
+        e.preventDefault();
+        if(!selectedUser) return;
+        addAdvance({ id: Date.now(), userId: selectedUser.id, userName: selectedUser.name, month: filterMonth, date: advDate, amount: parseFloat(advAmount), reason: advReason, type: type });
+        setAdvAmount(''); setAdvReason('');
+        logAction(`Added ${type} withdrawal for ${selectedUser.name}`);
+        showAlert('জমা/উত্তোলন এন্ট্রি হয়েছে!');
+    };
 
-            const currentSetting = (resSettings || []).find(r => r.userId.toString() === selectedUserId);
-            const [resPercentage, setResPercentage] = useState('');
-            
-            React.useEffect(() => {
-                if(currentSetting) setResPercentage(currentSetting.percentage);
-                else setResPercentage('');
-            }, [currentSetting, selectedUserId]);
+    const currentSetting = (resSettings || []).find(r => r.userId.toString() === selectedUserId);
+    const [resPercentage, setResPercentage] = useState('');
+    
+    React.useEffect(() => {
+        if(currentSetting) setResPercentage(currentSetting.percentage);
+        else setResPercentage('');
+    }, [currentSetting, selectedUserId]);
 
-            const handleSavePercentage = (e) => {
-                e.preventDefault();
-                if(!selectedUser) return;
-                if(currentSetting) updateResSetting(currentSetting.id, { percentage: parseFloat(resPercentage)||0 });
-                else addResSetting({ id: Date.now(), userId: selectedUser.id, percentage: parseFloat(resPercentage)||0 });
-                logAction(`Set reseller percentage for ${selectedUser.name}`);
-                showAlert('পার্সেন্টেজ সেট হয়েছে!');
-            };
+    const handleSavePercentage = (e) => {
+        e.preventDefault();
+        if(!selectedUser) return;
+        if(currentSetting) updateResSetting(currentSetting.id, { percentage: parseFloat(resPercentage)||0 });
+        else addResSetting({ id: Date.now(), userId: selectedUser.id, percentage: parseFloat(resPercentage)||0 });
+        logAction(`Set reseller percentage for ${selectedUser.name}`);
+        showAlert('পার্সেন্টেজ সেট হয়েছে!');
+    };
 
-            const myResCustomers = (resCustomers || []).filter(c => c.resellerId.toString() === selectedUserId);
-            const totalResBill = myResCustomers.reduce((sum, c) => sum + (Number(c.bill)||0), 0);
-            const finalPercentage = parseFloat(resPercentage)||0;
-            const myCommission = totalResBill * (finalPercentage / 100);
+    const myResCustomers = (resCustomers || []).filter(c => c.resellerId.toString() === selectedUserId);
+    const totalResBill = myResCustomers.reduce((sum, c) => sum + (Number(c.bill)||0), 0);
+    const finalPercentage = parseFloat(resPercentage)||0;
+    const myCommission = totalResBill * (finalPercentage / 100);
 
-            const myResWithdrawals = (advances || []).filter(a => a.userId.toString() === selectedUserId && a.month === filterMonth && a.type === 'reseller');
-            const totalResWithdrawn = myResWithdrawals.reduce((sum, a) => sum + (Number(a.amount)||0), 0);
-            const netResellerPayable = myCommission - totalResWithdrawn;
+    const myResWithdrawals = (advances || []).filter(a => a.userId.toString() === selectedUserId && a.month === filterMonth && a.type === 'reseller');
+    const totalResWithdrawn = myResWithdrawals.reduce((sum, a) => sum + (Number(a.amount)||0), 0);
+    const netResellerPayable = myCommission - totalResWithdrawn;
 
-            const [custId, setCustId] = useState('');
-            const [custName, setCustName] = useState('');
-            const [custBill, setCustBill] = useState('');
+    const [custId, setCustId] = useState('');
+    const [custName, setCustName] = useState('');
+    const [custBill, setCustBill] = useState('');
 
-            const handleAddCustomer = (e) => {
-                e.preventDefault();
-                if(!selectedUser) return;
-                addResCustomer({ id: Date.now(), resellerId: selectedUser.id, customerId: custId, name: custName, bill: parseFloat(custBill) });
-                setCustId(''); setCustName(''); setCustBill('');
-                logAction(`Added reseller customer ${custName}`);
-                showAlert('কাস্টমার যুক্ত হয়েছে!');
-            };
+    const handleAddCustomer = (e) => {
+        e.preventDefault();
+        if(!selectedUser) return;
+        addResCustomer({ id: Date.now(), resellerId: selectedUser.id, customerId: custId, name: custName, bill: parseFloat(custBill) });
+        setCustId(''); setCustName(''); setCustBill('');
+        logAction(`Added reseller customer ${custName}`);
+        showAlert('কাস্টমার যুক্ত হয়েছে!');
+    };
 
-            return (
-                <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b border-slate-100 pb-4">
-                        <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
-                            <i className="fa-solid fa-sack-dollar text-blue-500"></i> বেতন
-                        </h2>
-                        
-                        <div className="flex flex-col md:flex-row gap-3">
-                            {user.role === 'admin' && (
-                                <select value={selectedUserId} onChange={e=>setSelectedUserId(e.target.value)} className="border border-slate-300 p-2 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white font-bold text-slate-700 text-sm outline-none">
-                                    <option value="">-- স্টাফ/রিসেলার নির্বাচন করুন --</option>
-                                    {staffList.map(u => <option key={u.id} value={u.id}>{u.name} ({u.designation})</option>)}
-                                </select>
-                            )}
-                            <input type="month" value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} className="border border-slate-300 p-2 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white font-bold text-slate-700 text-sm outline-none" />
-                        </div>
+    return (
+        <div className="bg-white p-5 md:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b border-slate-100 pb-4">
+                <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <i className="fa-solid fa-sack-dollar text-blue-500"></i> বেতন
+                </h2>
+                
+                <div className="flex flex-col md:flex-row gap-3">
+                    {user.role === 'admin' && (
+                        <select value={selectedUserId} onChange={e=>setSelectedUserId(e.target.value)} className="border border-slate-300 p-2 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white font-bold text-slate-700 text-sm outline-none">
+                            <option value="">-- স্টাফ/রিসেলার নির্বাচন করুন --</option>
+                            {staffList.map(u => <option key={u.id} value={u.id}>{u.name} ({u.designation})</option>)}
+                        </select>
+                    )}
+                    <input type="month" value={filterMonth} onChange={e=>setFilterMonth(e.target.value)} className="border border-slate-300 p-2 rounded-xl focus:ring-2 focus:ring-blue-500 bg-white font-bold text-slate-700 text-sm outline-none" />
+                </div>
+            </div>
+
+            {!selectedUserId ? (
+                <div className="text-center p-10 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                    <i className="fa-solid fa-user-check text-4xl text-slate-300 mb-3"></i>
+                    <p className="text-slate-500 font-medium">উপর থেকে একজন স্টাফ বা রিসেলার নির্বাচন করুন</p>
+                </div>
+            ) : (
+                <>
+                    {/* Tabs */}
+                    <div className="flex bg-slate-100 p-1 rounded-xl w-full max-w-md mx-auto mb-6">
+                        {user.role === 'admin' && (
+                            <button onClick={()=>setActiveTab('staff')} className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'staff' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>স্টাফ বেতন</button>
+                        )}
+                        {canViewReseller && (
+                            <button onClick={()=>setActiveTab('reseller')} className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'reseller' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>রিসেলার বিল</button>
+                        )}
                     </div>
 
-                    {!selectedUserId ? (
-                        <div className="text-center p-10 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
-                            <i className="fa-solid fa-user-check text-4xl text-slate-300 mb-3"></i>
-                            <p className="text-slate-500 font-medium">উপর থেকে একজন স্টাফ বা রিসেলার নির্বাচন করুন</p>
-                        </div>
-                    ) : (
-                        <>
-                            <div className="flex bg-slate-100 p-1 rounded-xl w-full max-w-md mx-auto mb-6">
-                                <button onClick={()=>setActiveTab('staff')} className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'staff' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>স্টাফ বেতন</button>
-                                {canViewReseller && (
-                                    <button onClick={()=>setActiveTab('reseller')} className={`flex-1 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === 'reseller' ? 'bg-white shadow text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}>রিসেলার বিল</button>
-                                )}
+                    {/* Staff Salary Tab (only visible to admin or users without reseller access) */}
+                    {activeTab === 'staff' && (user.role === 'admin' || !user.canViewReseller) && (
+                        <div className="space-y-6 animate-fade-in-up">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center"><p className="text-xs text-slate-500 font-bold mb-1">নির্ধারিত মূল বেতন</p><p className="text-xl font-bold text-slate-800">৳{baseSalary || 0}</p></div>
+                                <div className="bg-red-50 p-4 rounded-xl border border-red-100 text-center"><p className="text-xs text-red-500 font-bold mb-1">বেতন কর্তন (-)</p><p className="text-xl font-bold text-red-600">৳{deductions || 0}</p></div>
+                                <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 text-center"><p className="text-xs text-orange-600 font-bold mb-1">মোট অগ্রিম গ্রহণ</p><p className="text-xl font-bold text-orange-700">৳{totalAdvance}</p></div>
+                                <div className="bg-green-50 p-4 rounded-xl border border-green-200 text-center"><p className="text-xs text-green-700 font-bold mb-1">পাওনা বকেয়া (Net)</p><p className="text-2xl font-black text-green-700">৳{netSalary}</p></div>
                             </div>
 
-                            {activeTab === 'staff' && (
-                                <div className="space-y-6 animate-fade-in-up">
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center"><p className="text-xs text-slate-500 font-bold mb-1">নির্ধারিত মূল বেতন</p><p className="text-xl font-bold text-slate-800">৳{baseSalary || 0}</p></div>
-                                        <div className="bg-red-50 p-4 rounded-xl border border-red-100 text-center"><p className="text-xs text-red-500 font-bold mb-1">বেতন কর্তন (-)</p><p className="text-xl font-bold text-red-600">৳{deductions || 0}</p></div>
-                                        <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 text-center"><p className="text-xs text-orange-600 font-bold mb-1">মোট অগ্রিম গ্রহণ</p><p className="text-xl font-bold text-orange-700">৳{totalAdvance}</p></div>
-                                        <div className="bg-green-50 p-4 rounded-xl border border-green-200 text-center"><p className="text-xs text-green-700 font-bold mb-1">পাওনা বকেয়া (Net)</p><p className="text-2xl font-black text-green-700">৳{netSalary}</p></div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        {user.role === 'admin' && (
-                                            <form onSubmit={handleSaveSalaryBase} className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
-                                                <h3 className="font-bold text-slate-700 mb-4 border-b pb-2"><i className="fa-solid fa-gear mr-2 text-slate-400"></i> বেতন সেটআপ (অ্যাডমিন)</h3>
-                                                <div className="space-y-3">
-                                                    <div><label className="block text-xs font-bold text-slate-500 mb-1">মূল বেতন (৳)</label><input type="number" value={baseSalary} onChange={e=>setBaseSalary(e.target.value)} className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" required /></div>
-                                                    <div><label className="block text-xs font-bold text-slate-500 mb-1">জরিমানা/কর্তন (৳)</label><input type="number" value={deductions} onChange={e=>setDeductions(e.target.value)} className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" /></div>
-                                                    <div><label className="block text-xs font-bold text-slate-500 mb-1">কর্তনের কারণ</label><input type="text" value={deductionReason} onChange={e=>setDeductionReason(e.target.value)} className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" /></div>
-                                                    <button type="submit" className="w-full bg-slate-800 text-white py-2.5 rounded-lg font-bold hover:bg-slate-900 transition mt-2">সেভ করুন</button>
-                                                </div>
-                                            </form>
-                                        )}
-                                        
-                                        <form onSubmit={(e) => handleAddAdvance(e, 'salary')} className="bg-blue-50/50 border border-blue-100 p-5 rounded-xl shadow-sm">
-                                            <h3 className="font-bold text-blue-800 mb-4 border-b border-blue-100 pb-2"><i className="fa-solid fa-hand-holding-dollar mr-2 text-blue-500"></i> অগ্রিম / বেতন গ্রহণ এন্ট্রি</h3>
-                                            <div className="space-y-3">
-                                                <div><label className="block text-xs font-bold text-blue-700 mb-1">তারিখ</label><input type="date" value={advDate} onChange={e=>setAdvDate(e.target.value)} className="w-full border border-blue-200 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 bg-white" required /></div>
-                                                <div><label className="block text-xs font-bold text-blue-700 mb-1">টাকার পরিমাণ (৳)</label><input type="number" value={advAmount} onChange={e=>setAdvAmount(e.target.value)} className="w-full border border-blue-200 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 bg-white" required placeholder="0" /></div>
-                                                <div><label className="block text-xs font-bold text-blue-700 mb-1">মন্তব্য/কারণ</label><input type="text" value={advReason} onChange={e=>setAdvReason(e.target.value)} className="w-full border border-blue-200 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 bg-white" required placeholder="যেমন: মাসের মাঝে অগ্রিম" /></div>
-                                                <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700 transition mt-2">এন্ট্রি করুন</button>
-                                            </div>
-                                        </form>
-                                    </div>
-
-                                    <div>
-                                        <h3 className="font-bold text-slate-700 mb-3"><i className="fa-solid fa-clock-rotate-left mr-2"></i> {filterMonth} মাসে টাকা গ্রহণের হিস্টরি</h3>
-                                        <div className="overflow-x-auto border border-slate-200 rounded-xl">
-                                            <table className="w-full text-left bg-white">
-                                                <thead>
-                                                    <tr className="bg-slate-50 text-slate-500 text-xs uppercase border-b"><th className="p-3 font-bold">তারিখ</th><th className="p-3 font-bold">মন্তব্য</th><th className="p-3 font-bold text-right">পরিমাণ</th>{user.role === 'admin' && <th className="p-3 text-center"><i className="fa-solid fa-trash"></i></th>}</tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-slate-100">
-                                                    {myAdvances.length === 0 ? <tr><td colSpan="4" className="p-4 text-center text-sm text-slate-400">কোনো রেকর্ড নেই</td></tr> : myAdvances.map(a => (
-                                                        <tr key={a.id}>
-                                                            <td className="p-3 text-sm font-medium">{formatDateEn(new Date(a.date))}</td>
-                                                            <td className="p-3 text-sm text-slate-600">{a.reason}</td>
-                                                            <td className="p-3 text-sm font-bold text-orange-600 text-right">৳{a.amount}</td>
-                                                            {user.role === 'admin' && <td className="p-3 text-center"><button onClick={()=>deleteAdvance(a.id)} className="text-red-400 hover:text-red-600"><i className="fa-solid fa-trash-can"></i></button></td>}
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {user.role === 'admin' && (
+                                    <form onSubmit={handleSaveSalaryBase} className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm">
+                                        <h3 className="font-bold text-slate-700 mb-4 border-b pb-2"><i className="fa-solid fa-gear mr-2 text-slate-400"></i> বেতন সেটআপ (অ্যাডমিন)</h3>
+                                        <div className="space-y-3">
+                                            <div><label className="block text-xs font-bold text-slate-500 mb-1">মূল বেতন (৳)</label><input type="number" value={baseSalary} onChange={e=>setBaseSalary(e.target.value)} className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" required /></div>
+                                            <div><label className="block text-xs font-bold text-slate-500 mb-1">জরিমানা/কর্তন (৳)</label><input type="number" value={deductions} onChange={e=>setDeductions(e.target.value)} className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" /></div>
+                                            <div><label className="block text-xs font-bold text-slate-500 mb-1">কর্তনের কারণ</label><input type="text" value={deductionReason} onChange={e=>setDeductionReason(e.target.value)} className="w-full border border-slate-300 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" /></div>
+                                            <button type="submit" className="w-full bg-slate-800 text-white py-2.5 rounded-lg font-bold hover:bg-slate-900 transition mt-2">সেভ করুন</button>
                                         </div>
+                                    </form>
+                                )}
+                                
+                                <form onSubmit={(e) => handleAddAdvance(e, 'salary')} className="bg-blue-50/50 border border-blue-100 p-5 rounded-xl shadow-sm">
+                                    <h3 className="font-bold text-blue-800 mb-4 border-b border-blue-100 pb-2"><i className="fa-solid fa-hand-holding-dollar mr-2 text-blue-500"></i> অগ্রিম / বেতন গ্রহণ এন্ট্রি</h3>
+                                    <div className="space-y-3">
+                                        <div><label className="block text-xs font-bold text-blue-700 mb-1">তারিখ</label><input type="date" value={advDate} onChange={e=>setAdvDate(e.target.value)} className="w-full border border-blue-200 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 bg-white" required /></div>
+                                        <div><label className="block text-xs font-bold text-blue-700 mb-1">টাকার পরিমাণ (৳)</label><input type="number" value={advAmount} onChange={e=>setAdvAmount(e.target.value)} className="w-full border border-blue-200 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 bg-white" required placeholder="0" /></div>
+                                        <div><label className="block text-xs font-bold text-blue-700 mb-1">মন্তব্য/কারণ</label><input type="text" value={advReason} onChange={e=>setAdvReason(e.target.value)} className="w-full border border-blue-200 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 bg-white" required placeholder="যেমন: মাসের মাঝে অগ্রিম" /></div>
+                                        <button type="submit" className="w-full bg-blue-600 text-white py-2.5 rounded-lg font-bold hover:bg-blue-700 transition mt-2">এন্ট্রি করুন</button>
                                     </div>
+                                </form>
+                            </div>
+
+                            <div>
+                                <h3 className="font-bold text-slate-700 mb-3"><i className="fa-solid fa-clock-rotate-left mr-2"></i> {filterMonth} মাসে টাকা গ্রহণের হিস্টরি</h3>
+                                <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                                    <table className="w-full text-left bg-white">
+                                        <thead>
+                                            <tr className="bg-slate-50 text-slate-500 text-xs uppercase border-b"><th className="p-3 font-bold">তারিখ</th><th className="p-3 font-bold">মন্তব্য</th><th className="p-3 font-bold text-right">পরিমাণ</th>{user.role === 'admin' && <th className="p-3 text-center"><i className="fa-solid fa-trash"></i></th>}</tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {myAdvances.length === 0 ? <tr><td colSpan="4" className="p-4 text-center text-sm text-slate-400">কোনো রেকর্ড নেই</td></tr> : myAdvances.map(a => (
+                                                <tr key={a.id}>
+                                                    <td className="p-3 text-sm font-medium">{formatDateEn(new Date(a.date))}</td>
+                                                    <td className="p-3 text-sm text-slate-600">{a.reason}</td>
+                                                    <td className="p-3 text-sm font-bold text-orange-600 text-right">৳{a.amount}</td>
+                                                    {user.role === 'admin' && <td className="p-3 text-center"><button onClick={()=>deleteAdvance(a.id)} className="text-red-400 hover:text-red-600"><i className="fa-solid fa-trash-can"></i></button></td>}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
-                            )}
-
-                            {canViewReseller && activeTab === 'reseller' && (
-                                <div className="space-y-6 animate-fade-in-up">
-                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center col-span-2 md:col-span-1"><p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">কমিশন পার্সেন্টেজ</p><p className="text-xl font-bold text-indigo-600">{resPercentage || 0}%</p></div>
-                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center"><p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">মোট কাস্টমার বিল</p><p className="text-xl font-bold text-slate-800">৳{totalResBill}</p></div>
-                                        <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 text-center"><p className="text-[10px] text-indigo-600 font-bold mb-1 uppercase">মোট প্রাপ্য কমিশন</p><p className="text-xl font-bold text-indigo-700">৳{myCommission}</p></div>
-                                        <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 text-center"><p className="text-[10px] text-orange-600 font-bold mb-1 uppercase">অগ্রিম/উত্তোলন (-)</p><p className="text-xl font-bold text-orange-700">৳{totalResWithdrawn}</p></div>
-                                        <div className="bg-green-50 p-4 rounded-xl border border-green-200 text-center"><p className="text-[10px] text-green-700 font-bold mb-1 uppercase">পাওনা বকেয়া (Net)</p><p className="text-2xl font-black text-green-700">৳{netResellerPayable}</p></div>
-                                    </div>
-
-                                    {user.role === 'admin' && (
-                                        <form onSubmit={handleSavePercentage} className="flex flex-col md:flex-row items-end gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
-                                            <div className="w-full md:w-1/3">
-                                                <label className="block text-xs font-bold text-indigo-800 mb-1">রিসেলারের কমিশন পার্সেন্টেজ (%) নির্ধারণ করুন</label>
-                                                <input type="number" value={resPercentage} onChange={e=>setResPercentage(e.target.value)} className="w-full border border-indigo-200 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 bg-white" required placeholder="উদাহরণ: 20" />
-                                            </div>
-                                            <button type="submit" className="w-full md:w-auto bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-indigo-700 transition">সেভ পার্সেন্টেজ</button>
-                                        </form>
-                                    )}
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
-                                            <div className="bg-slate-50 p-3 border-b border-slate-200"><h3 className="font-bold text-slate-700 text-sm"><i className="fa-solid fa-users mr-2 text-slate-400"></i> নতুন কাস্টমার যুক্ত করুন</h3></div>
-                                            <form onSubmit={handleAddCustomer} className="p-4 space-y-3">
-                                                <div><label className="block text-xs font-bold text-slate-500 mb-1">কাস্টমার আইডি</label><input type="text" value={custId} onChange={e=>setCustId(e.target.value)} className="w-full border border-slate-300 p-2 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" required placeholder="Client ID" /></div>
-                                                <div><label className="block text-xs font-bold text-slate-500 mb-1">কাস্টমারের নাম</label><input type="text" value={custName} onChange={e=>setCustName(e.target.value)} className="w-full border border-slate-300 p-2 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" required placeholder="Name" /></div>
-                                                <div><label className="block text-xs font-bold text-slate-500 mb-1">মাসিক বিল (৳)</label><input type="number" value={custBill} onChange={e=>setCustBill(e.target.value)} className="w-full border border-slate-300 p-2 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" required placeholder="0.00" /></div>
-                                                <button type="submit" className="w-full bg-slate-800 text-white py-2 rounded-lg font-bold hover:bg-slate-900 transition mt-2 text-sm">যুক্ত করুন</button>
-                                            </form>
-                                        </div>
-                                        
-                                        <div className="border border-indigo-100 rounded-xl overflow-hidden shadow-sm bg-white">
-                                            <div className="bg-indigo-50 p-3 border-b border-indigo-100"><h3 className="font-bold text-indigo-800 text-sm"><i className="fa-solid fa-money-bill-transfer mr-2 text-indigo-500"></i> কমিশন থেকে টাকা উত্তোলন/গ্রহণ</h3></div>
-                                            <form onSubmit={(e) => handleAddAdvance(e, 'reseller')} className="p-4 space-y-3">
-                                                <div><label className="block text-xs font-bold text-indigo-700 mb-1">তারিখ</label><input type="date" value={advDate} onChange={e=>setAdvDate(e.target.value)} className="w-full border border-indigo-200 p-2 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 bg-white" required /></div>
-                                                <div><label className="block text-xs font-bold text-indigo-700 mb-1">টাকার পরিমাণ (৳)</label><input type="number" value={advAmount} onChange={e=>setAdvAmount(e.target.value)} className="w-full border border-indigo-200 p-2 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 bg-white" required placeholder="0" /></div>
-                                                <div><label className="block text-xs font-bold text-indigo-700 mb-1">মন্তব্য/কারণ</label><input type="text" value={advReason} onChange={e=>setAdvReason(e.target.value)} className="w-full border border-indigo-200 p-2 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 bg-white" required placeholder="যেমন: কমিশন গ্রহণ" /></div>
-                                                <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 transition mt-2 text-sm">এন্ট্রি করুন</button>
-                                            </form>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                        <div>
-                                            <h3 className="font-bold text-slate-700 mb-3 text-sm"><i className="fa-solid fa-list mr-2"></i> কাস্টমার লিস্ট</h3>
-                                            <div className="overflow-x-auto border border-slate-200 rounded-xl h-64 overflow-y-auto">
-                                                <table className="w-full text-left bg-white relative">
-                                                    <thead className="sticky top-0 bg-slate-50 shadow-sm">
-                                                        <tr className="text-slate-500 text-xs uppercase"><th className="p-3 font-bold">ID</th><th className="p-3 font-bold">নাম</th><th className="p-3 font-bold text-right">বিল</th><th className="p-3 text-center"><i className="fa-solid fa-trash"></i></th></tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-slate-100">
-                                                        {myResCustomers.length === 0 ? <tr><td colSpan="4" className="p-4 text-center text-sm text-slate-400">কোনো কাস্টমার নেই</td></tr> : myResCustomers.map(c => (
-                                                            <tr key={c.id}>
-                                                                <td className="p-3 text-xs font-bold text-slate-500 bg-slate-50">{c.customerId}</td>
-                                                                <td className="p-3 text-sm font-bold text-slate-700">{c.name}</td>
-                                                                <td className="p-3 text-sm font-bold text-blue-600 text-right">৳{c.bill}</td>
-                                                                <td className="p-3 text-center"><button onClick={()=>deleteResCustomer(c.id)} className="text-red-400 hover:text-red-600"><i className="fa-solid fa-trash-can"></i></button></td>
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-
-                                        <div>
-                                            <h3 className="font-bold text-slate-700 mb-3 text-sm"><i className="fa-solid fa-clock-rotate-left mr-2"></i> {filterMonth} মাসে টাকা গ্রহণের হিস্টরি</h3>
-                                            <div className="overflow-x-auto border border-slate-200 rounded-xl h-64 overflow-y-auto">
-                                                <table className="w-full text-left bg-white relative">
-                                                    <thead className="sticky top-0 bg-slate-50 shadow-sm">
-                                                        <tr className="text-slate-500 text-xs uppercase"><th className="p-3 font-bold">তারিখ</th><th className="p-3 font-bold">মন্তব্য</th><th className="p-3 font-bold text-right">পরিমাণ</th>{user.role === 'admin' && <th className="p-3 text-center"><i className="fa-solid fa-trash"></i></th>}</tr>
-                                                    </thead>
-                                                    <tbody className="divide-y divide-slate-100">
-                                                        {myResWithdrawals.length === 0 ? <tr><td colSpan="4" className="p-4 text-center text-sm text-slate-400">কোনো রেকর্ড নেই</td></tr> : myResWithdrawals.map(a => (
-                                                            <tr key={a.id}>
-                                                                <td className="p-3 text-sm font-medium">{formatDateEn(new Date(a.date))}</td>
-                                                                <td className="p-3 text-xs text-slate-600">{a.reason}</td>
-                                                                <td className="p-3 text-sm font-bold text-orange-600 text-right">৳{a.amount}</td>
-                                                                {user.role === 'admin' && <td className="p-3 text-center"><button onClick={()=>deleteAdvance(a.id)} className="text-red-400 hover:text-red-600"><i className="fa-solid fa-trash-can"></i></button></td>}
-                                                            </tr>
-                                                        ))}
-                                                    </tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </>
+                            </div>
+                        </div>
                     )}
-                </div>
-            );
-        }
 
+                    {/* Reseller Tab (only if allowed) */}
+                    {activeTab === 'reseller' && canViewReseller && (
+                        <div className="space-y-6 animate-fade-in-up">
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center col-span-2 md:col-span-1"><p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">কমিশন পার্সেন্টেজ</p><p className="text-xl font-bold text-indigo-600">{resPercentage || 0}%</p></div>
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center"><p className="text-[10px] text-slate-500 font-bold mb-1 uppercase">মোট কাস্টমার বিল</p><p className="text-xl font-bold text-slate-800">৳{totalResBill}</p></div>
+                                <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 text-center"><p className="text-[10px] text-indigo-600 font-bold mb-1 uppercase">মোট প্রাপ্য কমিশন</p><p className="text-xl font-bold text-indigo-700">৳{myCommission}</p></div>
+                                <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 text-center"><p className="text-[10px] text-orange-600 font-bold mb-1 uppercase">অগ্রিম/উত্তোলন (-)</p><p className="text-xl font-bold text-orange-700">৳{totalResWithdrawn}</p></div>
+                                <div className="bg-green-50 p-4 rounded-xl border border-green-200 text-center"><p className="text-[10px] text-green-700 font-bold mb-1 uppercase">পাওনা বকেয়া (Net)</p><p className="text-2xl font-black text-green-700">৳{netResellerPayable}</p></div>
+                            </div>
+
+                            {user.role === 'admin' && (
+                                <form onSubmit={handleSavePercentage} className="flex flex-col md:flex-row items-end gap-3 bg-indigo-50/50 p-4 rounded-xl border border-indigo-100">
+                                    <div className="w-full md:w-1/3">
+                                        <label className="block text-xs font-bold text-indigo-800 mb-1">রিসেলারের কমিশন পার্সেন্টেজ (%) নির্ধারণ করুন</label>
+                                        <input type="number" value={resPercentage} onChange={e=>setResPercentage(e.target.value)} className="w-full border border-indigo-200 p-2.5 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 bg-white" required placeholder="উদাহরণ: 20" />
+                                    </div>
+                                    <button type="submit" className="w-full md:w-auto bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-bold hover:bg-indigo-700 transition">সেভ পার্সেন্টেজ</button>
+                                </form>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                                    <div className="bg-slate-50 p-3 border-b border-slate-200"><h3 className="font-bold text-slate-700 text-sm"><i className="fa-solid fa-users mr-2 text-slate-400"></i> নতুন কাস্টমার যুক্ত করুন</h3></div>
+                                    <form onSubmit={handleAddCustomer} className="p-4 space-y-3">
+                                        <div><label className="block text-xs font-bold text-slate-500 mb-1">কাস্টমার আইডি</label><input type="text" value={custId} onChange={e=>setCustId(e.target.value)} className="w-full border border-slate-300 p-2 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" required placeholder="Client ID" /></div>
+                                        <div><label className="block text-xs font-bold text-slate-500 mb-1">কাস্টমারের নাম</label><input type="text" value={custName} onChange={e=>setCustName(e.target.value)} className="w-full border border-slate-300 p-2 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" required placeholder="Name" /></div>
+                                        <div><label className="block text-xs font-bold text-slate-500 mb-1">মাসিক বিল (৳)</label><input type="number" value={custBill} onChange={e=>setCustBill(e.target.value)} className="w-full border border-slate-300 p-2 rounded-lg outline-none focus:ring-1 focus:ring-blue-500" required placeholder="0.00" /></div>
+                                        <button type="submit" className="w-full bg-slate-800 text-white py-2 rounded-lg font-bold hover:bg-slate-900 transition mt-2 text-sm">যুক্ত করুন</button>
+                                    </form>
+                                </div>
+                                
+                                <div className="border border-indigo-100 rounded-xl overflow-hidden shadow-sm bg-white">
+                                    <div className="bg-indigo-50 p-3 border-b border-indigo-100"><h3 className="font-bold text-indigo-800 text-sm"><i className="fa-solid fa-money-bill-transfer mr-2 text-indigo-500"></i> কমিশন থেকে টাকা উত্তোলন/গ্রহণ</h3></div>
+                                    <form onSubmit={(e) => handleAddAdvance(e, 'reseller')} className="p-4 space-y-3">
+                                        <div><label className="block text-xs font-bold text-indigo-700 mb-1">তারিখ</label><input type="date" value={advDate} onChange={e=>setAdvDate(e.target.value)} className="w-full border border-indigo-200 p-2 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 bg-white" required /></div>
+                                        <div><label className="block text-xs font-bold text-indigo-700 mb-1">টাকার পরিমাণ (৳)</label><input type="number" value={advAmount} onChange={e=>setAdvAmount(e.target.value)} className="w-full border border-indigo-200 p-2 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 bg-white" required placeholder="0" /></div>
+                                        <div><label className="block text-xs font-bold text-indigo-700 mb-1">মন্তব্য/কারণ</label><input type="text" value={advReason} onChange={e=>setAdvReason(e.target.value)} className="w-full border border-indigo-200 p-2 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 bg-white" required placeholder="যেমন: কমিশন গ্রহণ" /></div>
+                                        <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded-lg font-bold hover:bg-indigo-700 transition mt-2 text-sm">এন্ট্রি করুন</button>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                <div>
+                                    <h3 className="font-bold text-slate-700 mb-3 text-sm"><i className="fa-solid fa-list mr-2"></i> কাস্টমার লিস্ট</h3>
+                                    <div className="overflow-x-auto border border-slate-200 rounded-xl h-64 overflow-y-auto">
+                                        <table className="w-full text-left bg-white relative">
+                                            <thead className="sticky top-0 bg-slate-50 shadow-sm">
+                                                <tr className="text-slate-500 text-xs uppercase"><th className="p-3 font-bold">ID</th><th className="p-3 font-bold">নাম</th><th className="p-3 font-bold text-right">বিল</th><th className="p-3 text-center"><i className="fa-solid fa-trash"></i></th></tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {myResCustomers.length === 0 ? <tr><td colSpan="4" className="p-4 text-center text-sm text-slate-400">কোনো কাস্টমার নেই</td></tr> : myResCustomers.map(c => (
+                                                    <tr key={c.id}>
+                                                        <td className="p-3 text-xs font-bold text-slate-500 bg-slate-50">{c.customerId}</td>
+                                                        <td className="p-3 text-sm font-bold text-slate-700">{c.name}</td>
+                                                        <td className="p-3 text-sm font-bold text-blue-600 text-right">৳{c.bill}</td>
+                                                        <td className="p-3 text-center"><button onClick={()=>deleteResCustomer(c.id)} className="text-red-400 hover:text-red-600"><i className="fa-solid fa-trash-can"></i></button></td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h3 className="font-bold text-slate-700 mb-3 text-sm"><i className="fa-solid fa-clock-rotate-left mr-2"></i> {filterMonth} মাসে টাকা গ্রহণের হিস্টরি</h3>
+                                    <div className="overflow-x-auto border border-slate-200 rounded-xl h-64 overflow-y-auto">
+                                        <table className="w-full text-left bg-white relative">
+                                            <thead className="sticky top-0 bg-slate-50 shadow-sm">
+                                                <tr className="text-slate-500 text-xs uppercase"><th className="p-3 font-bold">তারিখ</th><th className="p-3 font-bold">মন্তব্য</th><th className="p-3 font-bold text-right">পরিমাণ</th>{user.role === 'admin' && <th className="p-3 text-center"><i className="fa-solid fa-trash"></i></th>}</tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {myResWithdrawals.length === 0 ? <tr><td colSpan="4" className="p-4 text-center text-sm text-slate-400">কোনো রেকর্ড নেই</td></tr> : myResWithdrawals.map(a => (
+                                                    <tr key={a.id}>
+                                                        <td className="p-3 text-sm font-medium">{formatDateEn(new Date(a.date))}</td>
+                                                        <td className="p-3 text-xs text-slate-600">{a.reason}</td>
+                                                        <td className="p-3 text-sm font-bold text-orange-600 text-right">৳{a.amount}</td>
+                                                        {user.role === 'admin' && <td className="p-3 text-center"><button onClick={()=>deleteAdvance(a.id)} className="text-red-400 hover:text-red-600"><i className="fa-solid fa-trash-can"></i></button></td>}
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </>
+            )}
+        </div>
+    );
+}
         // ============== EmployeesView (with budget & reseller permissions) ==============
         function EmployeesView({ users, addUser, updateUser, deleteUser, showConfirm, showAlert, logAction }) {
           const [editingId, setEditingId] = useState(null);
