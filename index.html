@@ -108,7 +108,6 @@
             firebase.initializeApp(firebaseConfig); 
             
             // 🚀 Speed Optimization: Enable Firebase Offline Persistence
-            // এটি ডেটা ক্যাশ করে রাখবে ফলে পরেরবার লোড হতে ১ সেকেন্ডেরও কম সময় লাগবে
             firebase.firestore().enablePersistence({ synchronizeTabs: true })
                 .catch(function(err) {
                     console.warn('Firebase persistence failed', err);
@@ -217,13 +216,13 @@
                                 return angleA - angleB;
                             });
 
-                            // 🌟 UI/UX Upgrade: Branded Theme Colors for Polygon
+                            // 🌟 UI/UX Update: Red Thick Border with Purple Fill based on image_9d0b9d.png
                             const polygon = L.polygon(points, {
-                                color: '#5e3186',
-                                fillColor: '#c084fc',
+                                color: '#ef4444', // Red border
+                                fillColor: '#c084fc', // Purple fill 
                                 fillOpacity: 0.4,
-                                weight: 3,
-                                dashArray: '5, 5'
+                                weight: 6, // Thick border
+                                dashArray: '' // Solid line like the image
                             }).addTo(map);
                             
                             // Add Markers for key areas
@@ -392,9 +391,9 @@
                                     <div className="p-6 md:p-8">
                                         <div className="text-center mb-4">
                                             <h3 className="text-2xl font-bold text-slate-800"><i className="fa-solid fa-map-location-dot text-[#5e3186] mr-2"></i> আমাদের কভারেজ এরিয়া</h3>
-                                            <p className="text-slate-500 text-sm mt-1">চিহ্নিত <span className="font-bold text-[#5e3186]">পার্পল এরিয়াগুলোর</span> মধ্যে আমরা সার্ভিস দিচ্ছি।</p>
+                                            <p className="text-slate-500 text-sm mt-1">চিহ্নিত <span className="font-bold text-red-500">লাল বর্ডারের</span> মধ্যে আমরা সার্ভিস দিচ্ছি।</p>
                                         </div>
-                                        <div id="coverageMap" className="w-full h-64 md:h-72 rounded-xl overflow-hidden shadow-inner border-2 border-[#5e3186]/20 relative z-0">
+                                        <div id="coverageMap" className="w-full h-64 md:h-72 rounded-xl overflow-hidden shadow-inner border-2 border-red-500/20 relative z-0">
                                             {/* Leaflet map will render here */}
                                         </div>
                                         <button onClick={() => setActiveModal(null)} className="w-full mt-4 bg-slate-100 text-slate-700 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors">বন্ধ করুন</button>
