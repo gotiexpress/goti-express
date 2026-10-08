@@ -123,13 +123,16 @@
             return [storedValue, setStoredValue];
         }
 
-        function useDatabase(collectionName, initialData = []) {
+function useDatabase(collectionName, initialData = []) {
             const [data, setData] = useState(() => {
                 try {
+                    // উপস্থিতির ভারী ডেটা লোকাল স্টোরেজ থেকে লোড বা সেভ হবে না
+                    if (collectionName === 'attendances') return initialData;
+                    
                     const local = window.localStorage.getItem('goti_' + collectionName);
                     if (local) {
                         let parsed = JSON.parse(local);
-                        if (['attendances','expenses','salaries','reports','incomes', 'costs', 'stock'].includes(collectionName)) {
+                        if (['expenses','salaries','reports','incomes', 'costs', 'stock'].includes(collectionName)) {
                             parsed = migrateDates(parsed, ['date']);
                         }
                         return parsed || [];
@@ -146,7 +149,10 @@
                             docs = migrateDates(docs, ['date']);
                         }
                         setData(docs);
-                        try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(docs)); } catch(e) { console.warn("Local storage full"); }
+                        // attendances বাদে বাকিগুলো মেমোরিতে সেভ হবে
+                        if(collectionName !== 'attendances') {
+                            try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(docs)); } catch(e) { console.warn("Local storage full"); }
+                        }
                     } else if (initialData.length > 0 && data.length === 0) {
                         initialData.forEach(item => 
                             db.collection(collectionName).doc(item.id.toString()).set(item)
@@ -161,24 +167,30 @@
             const addData = (newItem) => {
                 const newData = [newItem, ...(data || [])];
                 setData(newData);
-                try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData)); } catch(e) { console.warn("Local storage full"); }
+                if(collectionName !== 'attendances') {
+                    try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData)); } catch(e) { console.warn("Local storage full"); }
+                }
                 db.collection(collectionName).doc(newItem.id.toString()).set(newItem).catch(err => console.log("Add error:", err));
             };
             const updateData = (id, updatedFields) => {
                 const newData = (data || []).map(item => item.id === id ? { ...item, ...updatedFields } : item);
                 setData(newData);
-                try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData)); } catch(e) { console.warn("Local storage full"); }
+                if(collectionName !== 'attendances') {
+                    try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData)); } catch(e) { console.warn("Local storage full"); }
+                }
                 db.collection(collectionName).doc(id.toString()).update(updatedFields).catch(err => console.log("Update error:", err));
             };
             const deleteData = (id) => {
                 const newData = (data || []).filter(item => item.id !== id);
                 setData(newData);
-                try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData)); } catch(e) { console.warn("Local storage full"); }
+                if(collectionName !== 'attendances') {
+                    try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData)); } catch(e) { console.warn("Local storage full"); }
+                }
                 db.collection(collectionName).doc(id.toString()).delete().catch(err => console.log("Delete error:", err));
             };
             return [data || [], addData, updateData, deleteData];
         }
-
+    
         const getCurrentTimeStr = () => {
             return new Intl.DateTimeFormat('en-US', {
                 timeZone: 'Asia/Dhaka', year: 'numeric', month: 'short', day: 'numeric', 
