@@ -1529,12 +1529,15 @@
             const currentDateISO = formatDateISO(new Date());
             const locLink = `http://maps.google.com/?q=${userLoc}`;
 
-            try {
+           try {
                 // apnar deya Google Apps Script er link
                 const scriptUrl = 'https://script.google.com/macros/s/AKfycbwo5DeS7vYP8dPpYTD1erPar8iPKn743OIRR04SI4lAc3_UH7YoACq6Cj6k3nykzFk/exec'; 
                 
                 const response = await fetch(scriptUrl, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8'
+                    },
                     body: JSON.stringify({ 
                         image: photoDataUrl, 
                         name: `Attendance_${user.name}_${Date.now()}.jpg` 
