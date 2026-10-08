@@ -146,7 +146,7 @@
                             docs = migrateDates(docs, ['date']);
                         }
                         setData(docs);
-                        try { try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(docs)); } catch(e) { console.warn("Local storage is full"); } catch(e) { console.warn("Local storage is full"); }
+                        try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(docs)); } catch(e) { console.warn("Local storage full"); }
                     } else if (initialData.length > 0 && data.length === 0) {
                         initialData.forEach(item => 
                             db.collection(collectionName).doc(item.id.toString()).set(item)
@@ -161,19 +161,19 @@
             const addData = (newItem) => {
                 const newData = [newItem, ...(data || [])];
                 setData(newData);
-                window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData));
+                try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData)); } catch(e) { console.warn("Local storage full"); }
                 db.collection(collectionName).doc(newItem.id.toString()).set(newItem).catch(err => console.log("Add error:", err));
             };
             const updateData = (id, updatedFields) => {
                 const newData = (data || []).map(item => item.id === id ? { ...item, ...updatedFields } : item);
                 setData(newData);
-                window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData));
+                try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData)); } catch(e) { console.warn("Local storage full"); }
                 db.collection(collectionName).doc(id.toString()).update(updatedFields).catch(err => console.log("Update error:", err));
             };
             const deleteData = (id) => {
                 const newData = (data || []).filter(item => item.id !== id);
                 setData(newData);
-                window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData));
+                try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(newData)); } catch(e) { console.warn("Local storage full"); }
                 db.collection(collectionName).doc(id.toString()).delete().catch(err => console.log("Delete error:", err));
             };
             return [data || [], addData, updateData, deleteData];
@@ -1504,11 +1504,18 @@
             if (videoRef.current && videoRef.current.srcObject) { videoRef.current.srcObject.getTracks().forEach(track => track.stop()); setCameraActive(false); }
           };
 
-          const captureAndSubmit = () => {
+          const captureAndSubmit = async () => {
             if (!videoRef.current || !cameraActive || !userLoc) {
                if(!userLoc) setLocError(true);
                return;
             }
+            
+            const btn = document.getElementById('submit-att-btn');
+            if(btn) {
+              btn.disabled = true;
+              btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i> ছবি আপলোড হচ্ছে...`;
+            }
+
             const video = videoRef.current; 
             const canvas = canvasRef.current; 
             const context = canvas.getContext('2d');
@@ -1517,19 +1524,53 @@
             canvas.height = video.videoHeight;
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
             
-            const photoDataUrl = canvas.toDataURL('image/jpeg', 0.3);
+            const photoDataUrl = canvas.toDataURL('image/jpeg', 0.4);
             const currentTime = formatTimeEn(new Date());
             const currentDateISO = formatDateISO(new Date());
             const locLink = `http://maps.google.com/?q=${userLoc}`;
 
-            addAttendance({ id: Date.now(), userId: user.id, userName: user.name, date: currentDateISO, time: currentTime, photo: photoDataUrl, location: locLink });
-            
-            const btn = document.getElementById('submit-att-btn');
-            if(btn) {
-              const originalText = btn.innerHTML;
-              btn.innerHTML = `<i class="fa-solid fa-check mr-2"></i> সফল হয়েছে!`;
-              btn.classList.add('!bg-green-600');
-              setTimeout(() => { btn.innerHTML = originalText; btn.classList.remove('!bg-green-600'); }, 2000);
+            try {
+                // apnar deya Google Apps Script er link
+                const scriptUrl = 'https://script.google.com/macros/s/AKfycbwo5DeS7vYP8dPpYTD1erPar8iPKn743OIRR04SI4lAc3_UH7YoACq6Cj6k3nykzFk/exec'; 
+                
+                const response = await fetch(scriptUrl, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        image: photoDataUrl, 
+                        name: `Attendance_${user.name}_${Date.now()}.jpg` 
+                    })
+                });
+                
+                const result = await response.json();
+                
+                let finalPhotoUrl = photoDataUrl;
+                if(result.status === 'success') {
+                    finalPhotoUrl = result.url; // Google Drive er link
+                }
+
+                // chobi bade baki sob data Firebase e save
+                addAttendance({ id: Date.now(), userId: user.id, userName: user.name, date: currentDateISO, time: currentTime, photo: finalPhotoUrl, location: locLink });
+                
+                if(btn) {
+                  btn.innerHTML = `<i class="fa-solid fa-check mr-2"></i> সফল হয়েছে!`;
+                  btn.classList.add('!bg-green-600');
+                  setTimeout(() => { 
+                      btn.innerHTML = `<i class="fa-solid fa-camera mr-2 text-xl"></i> উপস্থিতি সাবমিট করুন`; 
+                      btn.classList.remove('!bg-green-600'); 
+                      btn.disabled = false;
+                  }, 2000);
+                }
+            } catch(error) {
+                console.error("Upload error", error);
+                if(btn) {
+                  btn.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-2"></i> আপলোড ব্যর্থ`;
+                  btn.classList.add('!bg-red-600');
+                  setTimeout(() => { 
+                      btn.innerHTML = `<i class="fa-solid fa-camera mr-2 text-xl"></i> উপস্থিতি সাবমিট করুন`; 
+                      btn.classList.remove('!bg-red-600'); 
+                      btn.disabled = false;
+                  }, 2000);
+                }
             }
           };
 
