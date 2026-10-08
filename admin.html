@@ -146,7 +146,7 @@
                             docs = migrateDates(docs, ['date']);
                         }
                         setData(docs);
-                        window.localStorage.setItem('goti_' + collectionName, JSON.stringify(docs));
+                        try { try { window.localStorage.setItem('goti_' + collectionName, JSON.stringify(docs)); } catch(e) { console.warn("Local storage is full"); } catch(e) { console.warn("Local storage is full"); }
                     } else if (initialData.length > 0 && data.length === 0) {
                         initialData.forEach(item => 
                             db.collection(collectionName).doc(item.id.toString()).set(item)
