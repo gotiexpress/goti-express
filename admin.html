@@ -117,8 +117,16 @@
                 } catch (error) { return initialValue; }
             });
             useEffect(() => {
-                try { window.localStorage.setItem(key, JSON.stringify(storedValue)); } 
-                catch (error) {}
+                try { 
+                    window.localStorage.setItem(key, JSON.stringify(storedValue)); 
+                } catch (error) {
+                    // Memory full thakle jam hoye thaka purono data automatic delete kore login save korbe
+                    try {
+                        window.localStorage.removeItem('goti_attendances');
+                        window.localStorage.removeItem('goti_users');
+                        window.localStorage.setItem(key, JSON.stringify(storedValue));
+                    } catch(e) {}
+                }
             }, [key, storedValue]);
             return [storedValue, setStoredValue];
         }
