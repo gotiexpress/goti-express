@@ -404,39 +404,64 @@
                                     </div>
                                 )}
 
-                                {/* 🔴 NEW BILL PAY MODAL INCORPORATING POSTER AND QR */}
+                                {/* 🔴 UPDATED BILL PAY MODAL: Animations, Bangla QR Apps & bKash Manual Steps */}
                                 {activeModal === 'billPay' && (
-                                    <div className="p-6 md:p-8 max-h-[85vh] overflow-y-auto">
-                                        <div className="text-center mb-6">
-                                            <div className="w-16 h-16 bg-pink-50 text-[#e2136e] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                                    <div className="p-6 md:p-8 max-h-[85vh] overflow-y-auto relative">
+                                        
+                                        {/* Animated Background Elements for UI/UX */}
+                                        <div className="absolute top-0 right-0 w-64 h-64 bg-pink-400 rounded-full mix-blend-multiply filter blur-[80px] opacity-20 animate-pulse pointer-events-none"></div>
+                                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-400 rounded-full mix-blend-multiply filter blur-[80px] opacity-20 animate-pulse pointer-events-none" style={{animationDelay: "2s"}}></div>
+
+                                        <div className="text-center mb-6 relative z-10">
+                                            <div className="w-16 h-16 bg-white border border-pink-100 text-[#e2136e] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg icon-animate">
                                                 <i className="fa-solid fa-qrcode"></i>
                                             </div>
-                                            <h3 className="text-2xl font-black text-slate-800 mb-2">বিকাশ এর মাধ্যমে বিল পেমেন্ট</h3>
-                                            <p className="text-slate-500 text-sm font-medium">নিচের কিউআর কোডটি স্ক্যান করে অথবা ধাপগুলো অনুসরণ করে সহজেই বিল পরিশোধ করুন।</p>
+                                            <h3 className="text-2xl font-black text-slate-800 mb-2">বিল পেমেন্ট</h3>
+                                            <p className="text-slate-500 text-sm font-medium">নিচের কিউআর কোডটি স্ক্যান করে অথবা ম্যানুয়ালি বিল পরিশোধ করুন।</p>
                                         </div>
                                         
-                                        <div className="space-y-6">
+                                        <div className="space-y-6 relative z-10">
                                             {/* Poster */}
-                                            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-md">
-                                                <img src="https://i.ibb.co.com/qM8WwfFm/image.jpg" alt="bKash Payment Rules" className="w-full h-auto object-contain" />
+                                            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-md hover:shadow-lg transition-shadow">
+                                                <img src="https://i.ibb.co.com/qM8WwfFm/image.jpg" alt="Payment Rules" className="w-full h-auto object-contain" />
                                             </div>
 
-                                            {/* QR Code */}
-                                            <div className="bg-white p-6 rounded-2xl border-2 border-dashed border-[#e2136e]/40 flex flex-col items-center justify-center text-center">
-                                                <h4 className="font-bold text-slate-700 mb-4">Bangla QR কোড স্ক্যান করুন</h4>
-                                                <img src="https://i.ibb.co.com/84b74tzg/Bangla-Qr.jpg" alt="Bangla QR Code" className="w-48 h-48 md:w-56 md:h-56 object-contain rounded-lg shadow-sm border border-slate-100 mb-4" />
-                                                <p className="text-xs text-slate-500">যেকোনো পেমেন্ট অ্যাপ থেকে স্ক্যান করুন</p>
+                                            {/* Bangla QR Section with App Badges */}
+                                            <div className="bg-white/80 backdrop-blur-sm p-6 md:p-8 rounded-3xl border-2 border-dashed border-purple-300 flex flex-col items-center justify-center text-center shadow-sm hover:border-purple-500 transition-colors relative overflow-hidden">
+                                                <h4 className="font-black text-slate-700 mb-4 text-lg">Bangla QR কোড স্ক্যান করুন</h4>
+                                                
+                                                <div className="p-3 bg-white rounded-2xl shadow-md mb-5 border border-slate-100">
+                                                    <img src="https://i.ibb.co.com/84b74tzg/Bangla-Qr.jpg" alt="Bangla QR Code" className="w-48 h-48 md:w-56 md:h-56 object-contain rounded-xl" />
+                                                </div>
+                                                
+                                                <p className="text-sm text-slate-600 font-bold mb-3">যেসব অ্যাপ সাপোর্ট করে:</p>
+                                                <div className="flex flex-wrap justify-center gap-2 mb-2">
+                                                    <span className="flex items-center gap-1.5 bg-[#e2136e] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"><i className="fa-solid fa-mobile-button"></i> bKash</span>
+                                                    <span className="flex items-center gap-1.5 bg-[#f58220] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"><i className="fa-solid fa-wallet"></i> Nagad</span>
+                                                    <span className="flex items-center gap-1.5 bg-[#8c1596] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"><i className="fa-solid fa-rocket"></i> Rocket</span>
+                                                    <span className="flex items-center gap-1.5 bg-[#005fb8] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"><i className="fa-solid fa-shield-halved"></i> Upay</span>
+                                                    <span className="flex items-center gap-1.5 bg-[#00a859] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"><i className="fa-solid fa-building-columns"></i> Bank Apps</span>
+                                                </div>
+                                                <p className="text-xs text-slate-500 mt-3 font-medium">যেকোনো ব্যাংক বা মোবাইল ব্যাংকিং অ্যাপ থেকে স্ক্যান করে পেমেন্ট করুন খুব সহজেই।</p>
                                             </div>
 
-                                            {/* Steps */}
-                                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                                                <h4 className="font-bold text-[#e2136e] mb-4 flex items-center"><i className="fa-solid fa-list-ol mr-2"></i> বিল পরিশোধের ধাপসমূহ:</h4>
-                                                <ol className="list-decimal list-inside space-y-3 text-sm md:text-base text-slate-700 font-medium">
+                                            {/* Manual bKash Steps Separated */}
+                                            <div className="bg-gradient-to-br from-pink-50 to-white p-6 md:p-8 rounded-3xl border border-pink-200 shadow-sm relative overflow-hidden group">
+                                                <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-pink-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700"></div>
+                                                
+                                                <h4 className="font-black text-[#e2136e] mb-6 flex items-center text-lg md:text-xl relative z-10"><i className="fa-solid fa-mobile-screen-button mr-2"></i> বিকাশ অ্যাপ দিয়ে সরাসরি পেমেন্ট</h4>
+                                                
+                                                <div className="bg-white py-5 px-6 rounded-2xl border border-pink-100 shadow-sm flex flex-col md:flex-row items-center justify-between mb-6 gap-3 relative z-10">
+                                                    <span className="text-slate-600 font-bold text-sm md:text-base">আমাদের বিকাশ নাম্বার:</span>
+                                                    <span className="text-2xl md:text-3xl font-black text-[#e2136e] tracking-widest bg-pink-50 px-5 py-2.5 rounded-xl border-2 border-pink-200 shadow-inner select-all">01875396497</span>
+                                                </div>
+
+                                                <ol className="list-decimal list-inside space-y-3.5 text-sm md:text-base text-slate-700 font-medium relative z-10">
                                                     <li>আপনার বিকাশ অ্যাপে লগ-ইন করুন।</li>
-                                                    <li>হোমস্ক্রিন থেকে <span className="font-bold text-slate-900">Scan QR</span> অপশনটি বেছে নিন।</li>
-                                                    <li>উপরে দেওয়া <span className="font-bold text-slate-900">Bangla QR</span> কোডটি স্ক্যান করুন।</li>
+                                                    <li>হোমস্ক্রিন থেকে <span className="font-bold text-[#e2136e] bg-pink-50 px-2.5 py-1 rounded-lg border border-pink-100">Payment</span> অথবা <span className="font-bold text-[#e2136e] bg-pink-50 px-2.5 py-1 rounded-lg border border-pink-100">Send Money</span> বেছে নিন।</li>
+                                                    <li>উপরে দেওয়া <span className="font-black text-slate-900 text-lg">01875396497</span> নাম্বারটি লিখুন।</li>
                                                     <li>আপনার মাসিক বিলের পরিমাণ লিখুন।</li>
-                                                    <li>রেফারেন্স (Reference) এ আপনার <span className="font-bold text-slate-900">ইউজার আইডি (User ID)</span> লিখুন।</li>
+                                                    <li>রেফারেন্স (Reference) এ আপনার <span className="font-bold text-[#e2136e]">ইউজার আইডি (User ID)</span> লিখুন।</li>
                                                     <li>আপনার বিকাশ পিন দিয়ে পেমেন্ট সম্পন্ন করুন।</li>
                                                 </ol>
                                             </div>
