@@ -150,6 +150,40 @@
             // Modals State: 'complaint', 'support', 'coverage', 'review', 'connection', 'billPay', null
             const [activeModal, setActiveModal] = useState(null); 
 
+            // 🔴 NEW: Hash / Deep Linking Logic
+            useEffect(() => {
+                const handleHashChange = () => {
+                    const hash = window.location.hash.replace('#', '');
+                    const modals = ['connection', 'complaint', 'support', 'coverage', 'billPay', 'review-modal'];
+                    
+                    if (modals.includes(hash)) {
+                        setActiveModal(hash === 'review-modal' ? 'review' : hash);
+                    } else {
+                        setActiveModal(null);
+                        if (hash) {
+                            const el = document.getElementById(hash);
+                            if (el) {
+                                // Section smooth scroll
+                                setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
+                            }
+                        }
+                    }
+                };
+
+                // Trigger on initial load
+                handleHashChange();
+
+                // Listen for hash changes
+                window.addEventListener('hashchange', handleHashChange);
+                return () => window.removeEventListener('hashchange', handleHashChange);
+            }, []);
+
+            // Helper to close modal and clean URL
+            const closeModal = () => {
+                window.history.pushState(null, null, window.location.pathname + window.location.search);
+                setActiveModal(null);
+            };
+
             useEffect(() => {
                 const handleScroll = () => setScrolled(window.scrollY > 50);
                 window.addEventListener('scroll', handleScroll);
@@ -165,19 +199,18 @@
                 }
             }, [webConfig]);
 
-            // Scroll Helper
+            // Scroll Helper (Updated for deep linking)
             const scrollToSec = (id) => {
                 setMenuOpen(false);
+                window.location.hash = id;
                 if(id === 'home') window.scrollTo(0,0);
-                else {
-                    const el = document.getElementById(id);
-                    if(el) el.scrollIntoView({ behavior: 'smooth' });
-                }
             };
 
+            // Modal Helper (Updated for deep linking)
             const openModal = (modalName) => {
                 setMenuOpen(false);
-                setActiveModal(modalName);
+                // "review" section vs "review-modal" hash fix
+                window.location.hash = modalName === 'review' ? 'review-modal' : modalName;
             };
 
             const visiblePackages = showAllPkgs ? packages : packages.slice(0, 3);
@@ -320,7 +353,7 @@
                     {activeModal && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
                             <div className="bg-white rounded-[2rem] w-full max-w-md md:max-w-lg overflow-hidden shadow-2xl relative border border-slate-100">
-                                <button onClick={() => setActiveModal(null)} className="absolute top-5 right-5 text-slate-400 hover:text-red-500 text-2xl z-10 transition-colors bg-white rounded-full"><i className="fa-solid fa-circle-xmark"></i></button>
+                                <button onClick={closeModal} className="absolute top-5 right-5 text-slate-400 hover:text-red-500 text-2xl z-10 transition-colors bg-white rounded-full"><i className="fa-solid fa-circle-xmark"></i></button>
                                 
                                 {/* Connection Request Modal */}
                                 {activeModal === 'connection' && (
@@ -340,7 +373,7 @@
                                                 date: new Date().toLocaleDateString('en-GB') 
                                             });
                                             alert('আপনার আবেদন সফলভাবে জমা হয়েছে। আমরা শীঘ্রই যোগাযোগ করবো।');
-                                            setActiveModal(null);
+                                            closeModal();
                                         }} className="space-y-4">
                                             <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium transition-colors" />
                                             <input required name="phone" type="text" placeholder="মোবাইল নাম্বার" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium transition-colors" />
@@ -362,7 +395,7 @@
                                             e.preventDefault();
                                             submitComplaint({ id: Date.now(), name: e.target.name.value, phone: e.target.phone.value, details: e.target.details.value, date: new Date().toLocaleDateString('en-GB') });
                                             alert('আপনার বার্তা সফলভাবে জমা হয়েছে। আমরা শীঘ্রই যোগাযোগ করবো।');
-                                            setActiveModal(null);
+                                            closeModal();
                                         }} className="space-y-4">
                                             <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium" />
                                             <input required name="phone" type="text" placeholder="মোবাইল নাম্বার" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium" />
@@ -400,7 +433,7 @@
                                         <div id="coverageMap" className="w-full h-64 md:h-72 rounded-2xl overflow-hidden shadow-inner border-[3px] border-purple-100 relative z-0">
                                             {/* Leaflet map will render here */}
                                         </div>
-                                        <button onClick={() => setActiveModal(null)} className="w-full mt-6 bg-slate-100 text-slate-700 py-3.5 rounded-2xl font-bold hover:bg-slate-200 transition-colors">বন্ধ করুন</button>
+                                        <button onClick={closeModal} className="w-full mt-6 bg-slate-100 text-slate-700 py-3.5 rounded-2xl font-bold hover:bg-slate-200 transition-colors">বন্ধ করুন</button>
                                     </div>
                                 )}
 
@@ -480,7 +513,7 @@
                                             e.preventDefault();
                                             submitReview({ id: Date.now(), customerName: e.target.name.value, rating: parseInt(e.target.rating.value), comment: e.target.comment.value, date: new Date().toLocaleDateString('en-GB') });
                                             alert('ধন্যবাদ! আপনার রিভিউ জমা হয়েছে।');
-                                            setActiveModal(null);
+                                            closeModal();
                                         }} className="space-y-4">
                                             <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-yellow-400 outline-none bg-slate-50 font-medium transition-colors" />
                                             <select required name="rating" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-yellow-400 outline-none bg-slate-50 font-bold text-slate-700 transition-colors">
