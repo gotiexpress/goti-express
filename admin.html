@@ -1524,7 +1524,7 @@ function useDatabase(collectionName, initialData = []) {
             if (videoRef.current && videoRef.current.srcObject) { videoRef.current.srcObject.getTracks().forEach(track => track.stop()); setCameraActive(false); }
           };
 
-          const captureAndSubmit = async () => {
+         const captureAndSubmit = async () => {
             if (!videoRef.current || !cameraActive || !userLoc) {
                if(!userLoc) setLocError(true);
                return;
@@ -1547,27 +1547,30 @@ function useDatabase(collectionName, initialData = []) {
             const photoDataUrl = canvas.toDataURL('image/jpeg', 0.4);
             const currentTime = formatTimeEn(new Date());
             const currentDateISO = formatDateISO(new Date());
-            const locLink = `http://maps.google.com/?q=${userLoc}`;
+            const locLink = userLoc ? `http://maps.google.com/?q=${userLoc}` : "Location Unavailable";
 
-           try {
-                // apnar deya Google Apps Script er link
-                const scriptUrl = 'https://script.google.com/macros/s/AKfycbwo5DeS7vYP8dPpYTD1erPar8iPKn743OIRR04SI4lAc3_UH7YoACq6Cj6k3nykzFk/exec'; 
+            try {
+                // আপনার নতুন গুগল অ্যাপস স্ক্রিপ্ট লিংক 
+                const scriptUrl = 'https://script.google.com/macros/s/AKfycbxMPVnmM-pV9j5JkELr-phmRDj3q75bYAuRSuYlhbeR_CwP0Glhd9Tm4qWHZ-hsLNs/exec'; 
                 
-          const response = await fetch(scriptUrl, {
+                // ১০০% কাজ করার জন্য নতুন ফর্ম্যাটিং (URLSearchParams)
+                const formData = new URLSearchParams();
+                formData.append('image', photoDataUrl);
+                formData.append('name', `Attendance_${user.name}_${Date.now()}.jpg`);
+
+                const response = await fetch(scriptUrl, {
                     method: 'POST',
-                    body: JSON.stringify({ 
-                        image: photoDataUrl, 
-                        name: `Attendance_${user.name}_${Date.now()}.jpg` 
-                    })
+                    body: formData
                 });
+                
                 const result = await response.json();
                 
                 let finalPhotoUrl = photoDataUrl;
                 if(result.status === 'success') {
-                    finalPhotoUrl = result.url; // Google Drive er link
+                    finalPhotoUrl = result.url; // গুগল ড্রাইভের লিংক
                 }
 
-                // chobi bade baki sob data Firebase e save
+                // ফায়ারবেসে ডাটা সেভ
                 addAttendance({ id: Date.now(), userId: user.id, userName: user.name, date: currentDateISO, time: currentTime, photo: finalPhotoUrl, location: locLink });
                 
                 if(btn) {
@@ -1581,18 +1584,21 @@ function useDatabase(collectionName, initialData = []) {
                 }
             } catch(error) {
                 console.error("Upload error", error);
+                
+                // ড্রাইভ ফেইল করলে ব্যাকআপ হিসেবে ফায়ারবেসে সেভ হবে
+                addAttendance({ id: Date.now(), userId: user.id, userName: user.name, date: currentDateISO, time: currentTime, photo: photoDataUrl, location: locLink });
+                
                 if(btn) {
-                  btn.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-2"></i> আপলোড ব্যর্থ`;
-                  btn.classList.add('!bg-red-600');
+                  btn.innerHTML = `<i class="fa-solid fa-check mr-2"></i> ড্রাইভ ব্যর্থ, ব্যাকআপে সেভ হয়েছে!`;
+                  btn.classList.add('!bg-orange-500');
                   setTimeout(() => { 
                       btn.innerHTML = `<i class="fa-solid fa-camera mr-2 text-xl"></i> উপস্থিতি সাবমিট করুন`; 
-                      btn.classList.remove('!bg-red-600'); 
+                      btn.classList.remove('!bg-orange-500'); 
                       btn.disabled = false;
-                  }, 2000);
+                  }, 3000);
                 }
             }
           };
-
           const myAttendances = user.role === 'admin' ? (attendances || []) : (attendances || []).filter(a => a.userId === user.id);
           const allEmployees = users ? users.filter(u => u.role !== 'admin' && u.canSubmitAttendance) : []; 
 
