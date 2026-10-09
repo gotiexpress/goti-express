@@ -1524,7 +1524,7 @@ function useDatabase(collectionName, initialData = []) {
             if (videoRef.current && videoRef.current.srcObject) { videoRef.current.srcObject.getTracks().forEach(track => track.stop()); setCameraActive(false); }
           };
 
-         const captureAndSubmit = async () => {
+        const captureAndSubmit = async () => {
             if (!videoRef.current || !cameraActive || !userLoc) {
                if(!userLoc) setLocError(true);
                return;
@@ -1549,11 +1549,11 @@ function useDatabase(collectionName, initialData = []) {
             const currentDateISO = formatDateISO(new Date());
             const locLink = userLoc ? `http://maps.google.com/?q=${userLoc}` : "Location Unavailable";
 
-           try {
-                // আপনার নতুন গুগল অ্যাপস স্ক্রিপ্ট লিংক 
-                const scriptUrl = 'https://script.google.com/macros/s/AKfycbxMPVnmM-pV9j5JkELr-phmRDj3q75bYAuRSuYlhbeR_CwP0Glhd9Tm4qWHZ-hsLNs/exec'; 
+            try {
+                // Ekhane apnar ekdom notun Web App URL ti deya holo
+                const scriptUrl = 'https://script.google.com/macros/s/AKfycbzrFlYVOGEtwt7pZoUmPKmD2z6GMAA6iMRuDqxnDkasyQ5nEnA6HVI9bu_vbflmxEM/exec'; 
                 
-                // ১০০% কাজ করার জন্য নতুন ফর্ম্যাটিং (URLSearchParams)
+                // 100% kaj korar jonno notun formatting (URLSearchParams)
                 const formData = new URLSearchParams();
                 formData.append('image', photoDataUrl);
                 formData.append('name', `Attendance_${user.name}_${Date.now()}.jpg`);
@@ -1567,10 +1567,10 @@ function useDatabase(collectionName, initialData = []) {
                 
                 let finalPhotoUrl = photoDataUrl;
                 if(result.status === 'success') {
-                    finalPhotoUrl = result.url; // গুগল ড্রাইভের লিংক
+                    finalPhotoUrl = result.url; // Google Drive er link
                 }
 
-                // ফায়ারবেসে ডাটা সেভ
+                // Firebase e data save
                 addAttendance({ id: Date.now(), userId: user.id, userName: user.name, date: currentDateISO, time: currentTime, photo: finalPhotoUrl, location: locLink });
                 
                 if(btn) {
@@ -1585,7 +1585,7 @@ function useDatabase(collectionName, initialData = []) {
             } catch(error) {
                 console.error("Upload error", error);
                 
-                // ড্রাইভ ফেইল করলে ব্যাকআপ হিসেবে ফায়ারবেসে সেভ হবে
+                // Drive fail korle backup hishabe Firebase e save hobe
                 addAttendance({ id: Date.now(), userId: user.id, userName: user.name, date: currentDateISO, time: currentTime, photo: photoDataUrl, location: locLink });
                 
                 if(btn) {
