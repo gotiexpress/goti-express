@@ -147,7 +147,7 @@
             const [menuOpen, setMenuOpen] = useState(false);
             const [showAllPkgs, setShowAllPkgs] = useState(false);
 
-            // Modals State: 'complaint', 'support', 'coverage', 'review', 'connection', null
+            // Modals State: 'complaint', 'support', 'coverage', 'review', 'connection', 'billPay', null
             const [activeModal, setActiveModal] = useState(null); 
 
             useEffect(() => {
@@ -283,8 +283,8 @@
                                     <ul className="space-y-1">
                                         <li><button onClick={() => scrollToSec('home')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-house w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> হোম</button></li>
                                         
-                                        {/* 🔴 BILL PAYMENT OPTION - Updated Link */}
-                                        <li><a href="http://selfcare.gotiexpress.com/" target="_blank" className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-credit-card w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> বিল পরিশোধ</a></li>
+                                        {/* 🔴 NEW OPTION ADDED AT POS 2 */}
+                                        <li><a href="http://selfcare.gotiexpress.com/" target="_blank" className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-user-gear w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> সেল্ফ কেয়ার</a></li>
                                         
                                         {/* 🔴 FTP OPTION */}
                                         <li><a href={ftpLink} target={ftpLink !== '#' ? '_blank' : ''} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-folder-open w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> FTP</a></li>
@@ -292,6 +292,10 @@
                                         <li><button onClick={() => scrollToSec('about')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-bolt w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> সার্ভিসেস</button></li>
                                         <li><button onClick={() => scrollToSec('packages')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-wifi w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> প্যাকেজ</button></li>
                                         <li><button onClick={() => openModal('coverage')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-map-location-dot w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> কভারেজ</button></li>
+                                        
+                                        {/* 🔴 BILL PAYMENT MOVED HERE AND CHANGED TO MODAL */}
+                                        <li><button onClick={() => openModal('billPay')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-credit-card w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> বিল পরিশোধ</button></li>
+                                        
                                         <li><button onClick={() => openModal('support')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-headset w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> সাপোর্ট</button></li>
                                         <li><button onClick={() => openModal('complaint')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-triangle-exclamation w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> অভিযোগ</button></li>
                                         <li><button onClick={() => scrollToSec('review')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-star w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> রিভিউ</button></li>
@@ -397,6 +401,46 @@
                                             {/* Leaflet map will render here */}
                                         </div>
                                         <button onClick={() => setActiveModal(null)} className="w-full mt-6 bg-slate-100 text-slate-700 py-3.5 rounded-2xl font-bold hover:bg-slate-200 transition-colors">বন্ধ করুন</button>
+                                    </div>
+                                )}
+
+                                {/* 🔴 NEW BILL PAY MODAL INCORPORATING POSTER AND QR */}
+                                {activeModal === 'billPay' && (
+                                    <div className="p-6 md:p-8 max-h-[85vh] overflow-y-auto">
+                                        <div className="text-center mb-6">
+                                            <div className="w-16 h-16 bg-pink-50 text-[#e2136e] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                                                <i className="fa-solid fa-qrcode"></i>
+                                            </div>
+                                            <h3 className="text-2xl font-black text-slate-800 mb-2">বিকাশ এর মাধ্যমে বিল পেমেন্ট</h3>
+                                            <p className="text-slate-500 text-sm font-medium">নিচের কিউআর কোডটি স্ক্যান করে অথবা ধাপগুলো অনুসরণ করে সহজেই বিল পরিশোধ করুন।</p>
+                                        </div>
+                                        
+                                        <div className="space-y-6">
+                                            {/* Poster */}
+                                            <div className="rounded-xl overflow-hidden border border-slate-200 shadow-md">
+                                                <img src="https://i.ibb.co.com/qM8WwfFm/image.jpg" alt="bKash Payment Rules" className="w-full h-auto object-contain" />
+                                            </div>
+
+                                            {/* QR Code */}
+                                            <div className="bg-white p-6 rounded-2xl border-2 border-dashed border-[#e2136e]/40 flex flex-col items-center justify-center text-center">
+                                                <h4 className="font-bold text-slate-700 mb-4">Bangla QR কোড স্ক্যান করুন</h4>
+                                                <img src="https://i.ibb.co.com/84b74tzg/Bangla-Qr.jpg" alt="Bangla QR Code" className="w-48 h-48 md:w-56 md:h-56 object-contain rounded-lg shadow-sm border border-slate-100 mb-4" />
+                                                <p className="text-xs text-slate-500">যেকোনো পেমেন্ট অ্যাপ থেকে স্ক্যান করুন</p>
+                                            </div>
+
+                                            {/* Steps */}
+                                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                                <h4 className="font-bold text-[#e2136e] mb-4 flex items-center"><i className="fa-solid fa-list-ol mr-2"></i> বিল পরিশোধের ধাপসমূহ:</h4>
+                                                <ol className="list-decimal list-inside space-y-3 text-sm md:text-base text-slate-700 font-medium">
+                                                    <li>আপনার বিকাশ অ্যাপে লগ-ইন করুন।</li>
+                                                    <li>হোমস্ক্রিন থেকে <span className="font-bold text-slate-900">Scan QR</span> অপশনটি বেছে নিন।</li>
+                                                    <li>উপরে দেওয়া <span className="font-bold text-slate-900">Bangla QR</span> কোডটি স্ক্যান করুন।</li>
+                                                    <li>আপনার মাসিক বিলের পরিমাণ লিখুন।</li>
+                                                    <li>রেফারেন্স (Reference) এ আপনার <span className="font-bold text-slate-900">ইউজার আইডি (User ID)</span> লিখুন।</li>
+                                                    <li>আপনার বিকাশ পিন দিয়ে পেমেন্ট সম্পন্ন করুন।</li>
+                                                </ol>
+                                            </div>
+                                        </div>
                                     </div>
                                 )}
 
@@ -576,28 +620,6 @@
                                         <p className="text-slate-600 font-medium leading-relaxed italic">"{r.comment}"</p>
                                     </div>
                                 ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Professional Bill Payment CTA - Link Updated */}
-                    <div className="py-24 relative z-10 px-6">
-                        <div className="max-w-5xl mx-auto bg-gradient-to-br from-[#2d1960] to-[#5e3186] rounded-[3rem] shadow-2xl shadow-purple-900/30 overflow-hidden flex flex-col md:flex-row items-center relative group">
-                            <div className="absolute right-0 top-0 w-96 h-96 bg-white opacity-10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700"></div>
-                            <div className="absolute -left-20 -bottom-20 w-64 h-64 bg-purple-400 opacity-20 rounded-full blur-3xl"></div>
-                            
-                            <div className="p-12 md:p-16 md:w-2/3 relative z-10 text-white text-center md:text-left">
-                                <span className="bg-white/20 backdrop-blur-sm text-purple-100 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-widest mb-6 inline-block border border-white/10 shadow-sm">Easy Payment</span>
-                                <h3 className="text-3xl md:text-5xl font-black mb-6 leading-tight">আপনার মাসিক বিল <br/>পরিশোধ করুন সহজেই</h3>
-                                <p className="text-purple-200 font-medium mb-10 text-base leading-relaxed md:pr-10">ঘরে বসেই বিকাশ, নগদ, রকেট বা যেকোনো ব্যাংক কার্ডের মাধ্যমে অত্যন্ত নিরাপদে ইন্টারনেট বিল পরিশোধ করুন কোনো ঝামেলা ছাড়াই।</p>
-                                
-                                {/* 🔴 UPDATED LINK HERE AS WELL */}
-                                <a href="http://selfcare.gotiexpress.com/" target="_blank" className="inline-flex items-center bg-white text-[#2d1960] px-10 py-4 rounded-full font-black hover:scale-105 hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-all"><i className="fa-solid fa-credit-card mr-3 text-[#5e3186] text-xl"></i> অনলাইনে বিল দিন</a>
-                            </div>
-                            <div className="md:w-1/3 flex items-center justify-center p-8 relative z-10 pb-16 md:pb-8">
-                                <div className="w-48 h-48 bg-white/10 rounded-full flex items-center justify-center backdrop-blur-md border border-white/20 shadow-2xl logo-animate">
-                                    <i className="fa-solid fa-mobile-screen-button text-8xl text-white drop-shadow-lg"></i>
-                                </div>
                             </div>
                         </div>
                     </div>
