@@ -37,7 +37,7 @@
     <style>
         body { 
             font-family: 'Hind Siliguri', sans-serif; 
-            background-color: #fbf9ff; /* Subtle premium background tint */
+            background-color: #fbf9ff; 
             color: #1e293b;
             scroll-behavior: smooth;
         }
@@ -64,7 +64,7 @@
         }
         .icon-animate { animation: iconFloat 2.5s ease-in-out infinite; }
 
-        /* Tech Network Background Animations */
+        /* Tech Network Background Animations (Upgraded with more blobs) */
         @keyframes floatBlob1 {
             0%, 100% { transform: translate(0, 0) scale(1); }
             33% { transform: translate(30px, -50px) scale(1.1); }
@@ -85,6 +85,20 @@
         }
         .bg-theme-gradient {
             background: linear-gradient(135deg, #2d1960 0%, #5e3186 100%);
+        }
+        
+        /* Glassmorphism custom classes */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .glass-dark {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
     </style>
 </head>
@@ -146,11 +160,9 @@
             const [scrolled, setScrolled] = useState(false);
             const [menuOpen, setMenuOpen] = useState(false);
             const [showAllPkgs, setShowAllPkgs] = useState(false);
-
-            // Modals State: 'complaint', 'support', 'coverage', 'review', 'connection', 'billPay', null
             const [activeModal, setActiveModal] = useState(null); 
 
-            // 🔴 NEW: Hash / Deep Linking Logic
+            // 🔴 Hash / Deep Linking Logic
             useEffect(() => {
                 const handleHashChange = () => {
                     const hash = window.location.hash.replace('#', '');
@@ -163,22 +175,16 @@
                         if (hash) {
                             const el = document.getElementById(hash);
                             if (el) {
-                                // Section smooth scroll
                                 setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 100);
                             }
                         }
                     }
                 };
-
-                // Trigger on initial load
                 handleHashChange();
-
-                // Listen for hash changes
                 window.addEventListener('hashchange', handleHashChange);
                 return () => window.removeEventListener('hashchange', handleHashChange);
             }, []);
 
-            // Helper to close modal and clean URL
             const closeModal = () => {
                 window.history.pushState(null, null, window.location.pathname + window.location.search);
                 setActiveModal(null);
@@ -199,17 +205,14 @@
                 }
             }, [webConfig]);
 
-            // Scroll Helper (Updated for deep linking)
             const scrollToSec = (id) => {
                 setMenuOpen(false);
                 window.location.hash = id;
                 if(id === 'home') window.scrollTo(0,0);
             };
 
-            // Modal Helper (Updated for deep linking)
             const openModal = (modalName) => {
                 setMenuOpen(false);
-                // "review" section vs "review-modal" hash fix
                 window.location.hash = modalName === 'review' ? 'review-modal' : modalName;
             };
 
@@ -222,20 +225,18 @@
                         if (mapDom && !mapDom._leaflet_id) {
                             const map = L.map('coverageMap');
                             
-                            // 🌟 UI/UX Upgrade: Google Hybrid View (Satellite + Area Names)
                             L.tileLayer('http://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',{
                                 maxZoom: 20,
                                 subdomains:['mt0','mt1','mt2','mt3']
                             }).addTo(map);
 
-                            // 📍 Updated Coordinates covering Horinakundu Pourosova & Kul Bariya
                             const points = [
-                                [23.6700, 89.0450], [23.6680, 89.0600], // North
-                                [23.6550, 89.0680], [23.6400, 89.0650], // East
-                                [23.6250, 89.0550],                     // South-East
-                                [23.6150, 89.0300], [23.6180, 89.0150], // South (Kul Bariya Area)
-                                [23.6300, 89.0100], [23.6450, 89.0150], // West
-                                [23.6600, 89.0250]                      // North-West
+                                [23.6700, 89.0450], [23.6680, 89.0600],
+                                [23.6550, 89.0680], [23.6400, 89.0650],
+                                [23.6250, 89.0550],                     
+                                [23.6150, 89.0300], [23.6180, 89.0150],
+                                [23.6300, 89.0100], [23.6450, 89.0150],
+                                [23.6600, 89.0250]                      
                             ];
 
                             let cx = 0, cy = 0;
@@ -249,24 +250,15 @@
                                 return angleA - angleB;
                             });
 
-                            // 🌟 UI/UX Update: Red Thick Border with Purple Fill
                             const polygon = L.polygon(points, {
-                                color: '#ef4444', // Red border
-                                fillColor: '#c084fc', // Purple fill 
+                                color: '#ef4444', 
+                                fillColor: '#c084fc', 
                                 fillOpacity: 0.4,
-                                weight: 6, // Thick border
-                                dashArray: '' // Solid line
+                                weight: 6, 
+                                dashArray: '' 
                             }).addTo(map);
                             
-                            // Add Markers for key areas
-                            const mainOfficeIcon = L.divIcon({
-                                html: '<div style="background-color:#5e3186; width:16px; height:16px; border-radius:50%; border:3px solid white; box-shadow:0 0 10px rgba(0,0,0,0.5);"></div>',
-                                className: '', iconSize: [16, 16]
-                            });
-                            
-                            L.marker([23.652056, 89.045194], {icon: mainOfficeIcon}).addTo(map).bindPopup('<b style="color:#5e3186;">গতি এক্সপ্রেস অফিস</b><br>হরিণাকুণ্ডু পৌরসভা').openPopup();
-                            L.marker([23.6241, 89.0275], {icon: mainOfficeIcon}).addTo(map).bindPopup('<b>কুলবাড়ীয়া</b><br>কভারেজ এরিয়া');
-
+                            // REMOVED SPECIFIC OFFICE LOCATIONS AS REQUESTED, ONLY SHOWING POLYGON COVERAGE
                             map.fitBounds(polygon.getBounds());
                         }
                     }, 100);
@@ -274,30 +266,28 @@
                 }
             }, [activeModal]);
 
-            // FTP link from Firebase or default
             const ftpLink = webConfig?.ftpLink || '#';
 
             return (
                 <div className="relative overflow-hidden min-h-screen">
                     
-                    {/* Animated IT/Tech Background (Digital Nodes) */}
+                    {/* Animated IT/Tech Background (Enhanced) */}
                     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
                         <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-[#5e3186] rounded-full mix-blend-multiply filter blur-[120px] opacity-[0.15] tech-blob-1"></div>
                         <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-[#2d1960] rounded-full mix-blend-multiply filter blur-[150px] opacity-[0.15] tech-blob-2"></div>
                         <div className="absolute top-[40%] left-[60%] w-[30vw] h-[30vw] bg-purple-400 rounded-full mix-blend-multiply filter blur-[100px] opacity-10 tech-blob-1" style={{animationDelay: '2s'}}></div>
+                        <div className="absolute top-[80%] left-[20%] w-[25vw] h-[25vw] bg-pink-500 rounded-full mix-blend-multiply filter blur-[120px] opacity-10 tech-blob-2" style={{animationDelay: '1s'}}></div>
                     </div>
 
-                    {/* Navbar - Modernized */}
-                    <nav className={`fixed top-0 w-full z-40 transition-all duration-300 ${scrolled ? 'bg-white/90 backdrop-blur-lg shadow-[0_4px_30px_rgba(0,0,0,0.05)] py-3' : 'bg-white/70 backdrop-blur-md py-4 border-b border-white/30'}`}>
+                    {/* Navbar */}
+                    <nav className={`fixed top-0 w-full z-40 transition-all duration-300 ${scrolled ? 'bg-white/80 backdrop-blur-lg shadow-[0_4px_30px_rgba(0,0,0,0.05)] py-3' : 'bg-white/40 backdrop-blur-md py-4 border-b border-white/20'}`}>
                         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center relative z-10">
-                            {/* Balanced Logo & Name */}
                             <div className="flex items-center gap-2 cursor-pointer logo-animate" onClick={()=>scrollToSec('home')}>
-                                <img src="https://i.ibb.co.com/4Zy9b057/black-goti.png" alt="Goti Express Logo" className="h-9 md:h-11 object-contain" />
+                                <img src="https://i.ibb.co.com/4Zy9b057/black-goti.png" alt="Goti Express Logo" className="h-9 md:h-11 object-contain drop-shadow-sm" />
                                 <span className="text-xl md:text-2xl font-black gradient-text tracking-wider pt-1">গতি এক্সপ্রেস</span>
                             </div>
                             
-                            {/* Hamburger Icon */}
-                            <button onClick={() => setMenuOpen(true)} className="text-[#2d1960] text-2xl hover:text-[#5e3186] transition-transform hover:scale-110 p-1.5 focus:outline-none">
+                            <button onClick={() => setMenuOpen(true)} className="text-[#2d1960] text-2xl hover:text-[#5e3186] transition-transform hover:scale-110 p-1.5 focus:outline-none bg-white/50 backdrop-blur-sm rounded-xl px-3 shadow-sm border border-white/50">
                                 <i className="fa-solid fa-bars-staggered"></i>
                             </button>
                         </div>
@@ -307,28 +297,20 @@
                     {menuOpen && (
                         <div className="fixed inset-0 z-50 flex justify-end">
                             <div className="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity" onClick={() => setMenuOpen(false)}></div>
-                            <div className="relative w-72 md:w-80 bg-white h-full shadow-2xl flex flex-col animate-fade-in border-l border-purple-100">
-                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-purple-50/50">
+                            <div className="relative w-72 md:w-80 bg-white/95 backdrop-blur-xl h-full shadow-2xl flex flex-col animate-fade-in border-l border-purple-100/50">
+                                <div className="p-6 border-b border-slate-100/50 flex justify-between items-center bg-purple-50/50">
                                     <span className="font-bold text-[#2d1960] text-lg"><i className="fa-solid fa-compass mr-2"></i>মেনু</span>
                                     <button onClick={() => setMenuOpen(false)} className="w-8 h-8 bg-white text-red-500 rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition shadow-sm border border-red-100"><i className="fa-solid fa-xmark"></i></button>
                                 </div>
                                 <div className="flex-1 overflow-y-auto py-4">
                                     <ul className="space-y-1">
                                         <li><button onClick={() => scrollToSec('home')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-house w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> হোম</button></li>
-                                        
-                                        {/* 🔴 NEW OPTION ADDED AT POS 2 */}
                                         <li><a href="http://selfcare.gotiexpress.com/" target="_blank" className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-user-gear w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> সেল্ফ কেয়ার</a></li>
-                                        
-                                        {/* 🔴 FTP OPTION */}
                                         <li><a href={ftpLink} target={ftpLink !== '#' ? '_blank' : ''} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-folder-open w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> FTP</a></li>
-                                        
                                         <li><button onClick={() => scrollToSec('about')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-bolt w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> সার্ভিসেস</button></li>
                                         <li><button onClick={() => scrollToSec('packages')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-wifi w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> প্যাকেজ</button></li>
                                         <li><button onClick={() => openModal('coverage')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-map-location-dot w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> কভারেজ</button></li>
-                                        
-                                        {/* 🔴 BILL PAYMENT MOVED HERE AND CHANGED TO MODAL */}
                                         <li><button onClick={() => openModal('billPay')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-credit-card w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> বিল পরিশোধ</button></li>
-                                        
                                         <li><button onClick={() => openModal('support')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-headset w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> সাপোর্ট</button></li>
                                         <li><button onClick={() => openModal('complaint')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-triangle-exclamation w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> অভিযোগ</button></li>
                                         <li><button onClick={() => scrollToSec('review')} className="w-full text-left flex items-center px-6 py-3.5 text-slate-700 font-bold hover:bg-purple-50 hover:text-[#5e3186] transition border-l-4 border-transparent hover:border-[#5e3186]"><i className="fa-solid fa-star w-6 text-center mr-3 text-lg opacity-80 text-[#5e3186]"></i> রিভিউ</button></li>
@@ -339,20 +321,10 @@
                         </div>
                     )}
 
-                    {/* Popup Ad */}
-                    {showPopup && (
-                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                            <div className="relative bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl ring-4 ring-white/10">
-                                <button onClick={() => setShowPopup(false)} className="absolute top-4 right-4 bg-red-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold shadow-md hover:bg-red-600 transition z-10"><i className="fa-solid fa-xmark"></i></button>
-                                <img src={webConfig.popupUrl} alt="Advertisement" className="w-full h-auto object-contain" loading="lazy" />
-                            </div>
-                        </div>
-                    )}
-
                     {/* Modals System */}
                     {activeModal && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
-                            <div className="bg-white rounded-[2rem] w-full max-w-md md:max-w-lg overflow-hidden shadow-2xl relative border border-slate-100">
+                            <div className="bg-white/95 backdrop-blur-xl rounded-[2rem] w-full max-w-md md:max-w-lg overflow-hidden shadow-2xl relative border border-white/50">
                                 <button onClick={closeModal} className="absolute top-5 right-5 text-slate-400 hover:text-red-500 text-2xl z-10 transition-colors bg-white rounded-full"><i className="fa-solid fa-circle-xmark"></i></button>
                                 
                                 {/* Connection Request Modal */}
@@ -361,23 +333,16 @@
                                         <div className="text-center mb-6">
                                             <div className="w-16 h-16 bg-gradient-to-br from-[#2d1960] to-[#5e3186] text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg"><i className="fa-solid fa-wifi"></i></div>
                                             <h3 className="text-2xl font-black text-slate-800">নতুন সংযোগ আবেদন</h3>
-                                            <p className="text-slate-500 text-sm mt-1">আপনার তথ্য দিন, আমরা শীঘ্রই যোগাযোগ করবো</p>
                                         </div>
                                         <form onSubmit={(e) => {
                                             e.preventDefault();
-                                            submitComplaint({ 
-                                                id: Date.now(), 
-                                                name: e.target.name.value, 
-                                                phone: e.target.phone.value, 
-                                                details: "নতুন সংযোগের আবেদন। ঠিকানা: " + e.target.address.value, 
-                                                date: new Date().toLocaleDateString('en-GB') 
-                                            });
+                                            submitComplaint({ id: Date.now(), name: e.target.name.value, phone: e.target.phone.value, details: "নতুন সংযোগের আবেদন। ঠিকানা: " + e.target.address.value, date: new Date().toLocaleDateString('en-GB') });
                                             alert('আপনার আবেদন সফলভাবে জমা হয়েছে। আমরা শীঘ্রই যোগাযোগ করবো।');
                                             closeModal();
                                         }} className="space-y-4">
-                                            <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium transition-colors" />
-                                            <input required name="phone" type="text" placeholder="মোবাইল নাম্বার" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium transition-colors" />
-                                            <textarea required name="address" placeholder="যেখানে সংযোগ নিতে চান তার সম্পূর্ণ ঠিকানা লিখুন..." className="w-full border-2 border-slate-100 p-4 rounded-2xl h-28 focus:border-[#5e3186] outline-none bg-slate-50 resize-none font-medium transition-colors"></textarea>
+                                            <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100/50 bg-white/50 p-4 rounded-2xl focus:border-[#5e3186] outline-none font-medium transition-colors" />
+                                            <input required name="phone" type="text" placeholder="মোবাইল নাম্বার" className="w-full border-2 border-slate-100/50 bg-white/50 p-4 rounded-2xl focus:border-[#5e3186] outline-none font-medium transition-colors" />
+                                            <textarea required name="address" placeholder="যেখানে সংযোগ নিতে চান তার সম্পূর্ণ ঠিকানা লিখুন..." className="w-full border-2 border-slate-100/50 bg-white/50 p-4 rounded-2xl h-28 focus:border-[#5e3186] outline-none resize-none font-medium transition-colors"></textarea>
                                             <button type="submit" className="w-full bg-[#2d1960] text-white py-4 rounded-2xl font-bold shadow-lg shadow-purple-900/20 hover:bg-[#5e3186] hover:-translate-y-1 transition-all"><i className="fa-solid fa-paper-plane mr-2"></i> আবেদন জমা দিন</button>
                                         </form>
                                     </div>
@@ -389,7 +354,6 @@
                                         <div className="text-center mb-6">
                                             <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner"><i className="fa-solid fa-triangle-exclamation"></i></div>
                                             <h3 className="text-2xl font-black text-slate-800">অভিযোগ বক্স</h3>
-                                            <p className="text-slate-500 text-sm mt-1">যেকোনো টেকনিক্যাল সমস্যা বিস্তারিত জানান</p>
                                         </div>
                                         <form onSubmit={(e) => {
                                             e.preventDefault();
@@ -397,35 +361,61 @@
                                             alert('আপনার বার্তা সফলভাবে জমা হয়েছে। আমরা শীঘ্রই যোগাযোগ করবো।');
                                             closeModal();
                                         }} className="space-y-4">
-                                            <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium" />
-                                            <input required name="phone" type="text" placeholder="মোবাইল নাম্বার" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-[#5e3186] outline-none bg-slate-50 font-medium" />
-                                            <textarea required name="details" placeholder="সমস্যা বা অভিযোগ বিস্তারিত লিখুন..." className="w-full border-2 border-slate-100 p-4 rounded-2xl h-28 focus:border-[#5e3186] outline-none bg-slate-50 resize-none font-medium"></textarea>
+                                            <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100/50 bg-white/50 p-4 rounded-2xl focus:border-[#5e3186] outline-none font-medium" />
+                                            <input required name="phone" type="text" placeholder="মোবাইল নাম্বার" className="w-full border-2 border-slate-100/50 bg-white/50 p-4 rounded-2xl focus:border-[#5e3186] outline-none font-medium" />
+                                            <textarea required name="details" placeholder="সমস্যা বা অভিযোগ বিস্তারিত লিখুন..." className="w-full border-2 border-slate-100/50 bg-white/50 p-4 rounded-2xl h-28 focus:border-[#5e3186] outline-none resize-none font-medium"></textarea>
                                             <button type="submit" className="w-full bg-gradient-to-r from-[#5e3186] to-[#2d1960] text-white py-4 rounded-2xl font-bold shadow-lg shadow-purple-900/20 hover:shadow-xl hover:-translate-y-1 transition-all"><i className="fa-solid fa-paper-plane mr-2"></i> সাবমিট করুন</button>
                                         </form>
                                     </div>
                                 )}
 
-                                {/* Support Modal */}
+                                {/* Support Modal - WITH NEW GLASSMORPHISM AND DATA */}
                                 {activeModal === 'support' && (
-                                    <div className="p-8 text-center">
+                                    <div className="p-8 text-center bg-white/80 backdrop-blur-xl">
                                         <div className="w-16 h-16 bg-purple-50 text-[#5e3186] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner"><i className="fa-solid fa-headset"></i></div>
                                         <h3 className="text-2xl font-black text-slate-800 mb-6">সাপোর্ট সেন্টার</h3>
+                                        
                                         <div className="space-y-3 text-left">
-                                            <div className="bg-white hover:bg-slate-50 p-4 rounded-2xl border border-slate-200 flex justify-between items-center transition-colors shadow-sm"><span className="text-sm font-bold text-slate-600">IT & Support</span><a href="tel:01304251396" className="text-[#5e3186] font-bold bg-purple-50 px-3 py-1.5 rounded-lg"><i className="fa-solid fa-phone mr-1"></i> 01304251396</a></div>
-                                            <div className="bg-white hover:bg-slate-50 p-4 rounded-2xl border border-slate-200 flex justify-between items-center transition-colors shadow-sm"><span className="text-sm font-bold text-slate-600">Technician</span><a href="tel:01813910850" className="text-[#5e3186] font-bold bg-purple-50 px-3 py-1.5 rounded-lg"><i className="fa-solid fa-phone mr-1"></i> 01813910850</a></div>
-                                            <div className="bg-white hover:bg-slate-50 p-4 rounded-2xl border border-slate-200 flex justify-between items-center transition-colors shadow-sm"><span className="text-sm font-bold text-slate-600">Technician</span><a href="tel:01875396497" className="text-[#5e3186] font-bold bg-purple-50 px-3 py-1.5 rounded-lg"><i className="fa-solid fa-phone mr-1"></i> 01875396497</a></div>
-                                            <div className="bg-purple-50 p-4 rounded-2xl border border-purple-200 flex justify-between items-center shadow-sm"><span className="text-sm font-black text-[#2d1960]">Manager</span><a href="tel:01815151122" className="text-white bg-[#2d1960] px-4 py-1.5 rounded-lg font-bold shadow-md"><i className="fa-solid fa-phone mr-1"></i> 01815151122</a></div>
-                                            <div className="mt-6 text-center border-t border-slate-100 pt-6">
+                                            <div className="bg-white/60 backdrop-blur-md hover:bg-purple-50/80 p-4 rounded-2xl border border-slate-200/60 flex justify-between items-center transition-all shadow-sm">
+                                                <span className="text-sm font-bold text-slate-700">Senior Executive</span>
+                                                <a href="tel:01815151122" className="text-white bg-gradient-to-r from-[#2d1960] to-[#5e3186] px-4 py-1.5 rounded-lg font-bold shadow-md hover:scale-105 transition-transform"><i className="fa-solid fa-phone mr-1"></i> 01815151122</a>
+                                            </div>
+                                            <div className="bg-white/60 backdrop-blur-md hover:bg-purple-50/80 p-4 rounded-2xl border border-slate-200/60 flex justify-between items-center transition-all shadow-sm">
+                                                <span className="text-sm font-bold text-slate-700">IT & Support</span>
+                                                <a href="tel:01304251396" className="text-white bg-gradient-to-r from-[#2d1960] to-[#5e3186] px-4 py-1.5 rounded-lg font-bold shadow-md hover:scale-105 transition-transform"><i className="fa-solid fa-phone mr-1"></i> 01304251396</a>
+                                            </div>
+                                            <div className="bg-white/60 backdrop-blur-md hover:bg-purple-50/80 p-4 rounded-2xl border border-slate-200/60 flex justify-between items-center transition-all shadow-sm">
+                                                <span className="text-sm font-bold text-slate-700">Technician</span>
+                                                <a href="tel:01813910850" className="text-white bg-gradient-to-r from-[#2d1960] to-[#5e3186] px-4 py-1.5 rounded-lg font-bold shadow-md hover:scale-105 transition-transform"><i className="fa-solid fa-phone mr-1"></i> 01813910850</a>
+                                            </div>
+                                            <div className="bg-white/60 backdrop-blur-md hover:bg-purple-50/80 p-4 rounded-2xl border border-slate-200/60 flex justify-between items-center transition-all shadow-sm">
+                                                <span className="text-sm font-bold text-slate-700">Technician</span>
+                                                <a href="tel:01902859092" className="text-white bg-gradient-to-r from-[#2d1960] to-[#5e3186] px-4 py-1.5 rounded-lg font-bold shadow-md hover:scale-105 transition-transform"><i className="fa-solid fa-phone mr-1"></i> 01902-859092</a>
+                                            </div>
+
+                                            {/* Chat Links */}
+                                            <div className="grid grid-cols-2 gap-3 mt-5">
+                                                <a href="https://www.facebook.com/gotiexpress.net" target="_blank" className="bg-blue-50/80 backdrop-blur-md border border-blue-100 p-3 rounded-2xl flex flex-col items-center justify-center text-blue-600 hover:bg-blue-600 hover:text-white transition-all group shadow-sm">
+                                                    <i className="fa-brands fa-facebook-messenger text-2xl mb-1 group-hover:scale-110 transition-transform"></i>
+                                                    <span className="text-xs font-bold">Messenger</span>
+                                                </a>
+                                                <a href="https://wa.me/8801815151122" target="_blank" className="bg-green-50/80 backdrop-blur-md border border-green-100 p-3 rounded-2xl flex flex-col items-center justify-center text-green-600 hover:bg-green-600 hover:text-white transition-all group shadow-sm">
+                                                    <i className="fa-brands fa-whatsapp text-2xl mb-1 group-hover:scale-110 transition-transform"></i>
+                                                    <span className="text-xs font-bold">WhatsApp</span>
+                                                </a>
+                                            </div>
+
+                                            <div className="mt-6 text-center border-t border-slate-200/60 pt-5">
                                                 <p className="text-xs text-slate-500 mb-2 font-medium">অথবা ইমেইল করুন</p>
-                                                <a href="mailto:gotiexpresshelp@gmail.com" className="inline-block bg-slate-50 px-6 py-2 rounded-full text-sm font-bold text-slate-700 hover:text-[#5e3186] border border-slate-200 transition-colors"><i className="fa-regular fa-envelope mr-2 text-[#5e3186]"></i> gotiexpresshelp@gmail.com</a>
+                                                <a href="mailto:gotiexpressdesk@gmail.com" className="inline-block bg-slate-50/80 backdrop-blur-md px-6 py-2 rounded-full text-sm font-bold text-slate-700 hover:text-[#5e3186] border border-slate-200 transition-colors"><i className="fa-regular fa-envelope mr-2 text-[#5e3186]"></i> gotiexpressdesk@gmail.com</a>
                                             </div>
                                         </div>
                                     </div>
                                 )}
 
-                                {/* Coverage Modal */}
+                                {/* Coverage Modal - CLEANED LOCATION */}
                                 {activeModal === 'coverage' && (
-                                    <div className="p-6 md:p-8">
+                                    <div className="p-6 md:p-8 bg-white/90 backdrop-blur-xl">
                                         <div className="text-center mb-6">
                                             <h3 className="text-2xl font-black text-slate-800"><i className="fa-solid fa-map-location-dot text-[#5e3186] mr-2"></i> আমাদের কভারেজ এরিয়া</h3>
                                             <p className="text-slate-500 text-sm mt-2">চিহ্নিত <span className="font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded">লাল বর্ডারের</span> মধ্যে আমরা সার্ভিস দিচ্ছি।</p>
@@ -437,36 +427,28 @@
                                     </div>
                                 )}
 
-                                {/* 🔴 UPDATED BILL PAY MODAL: Animations, Bangla QR Apps & bKash Manual Steps */}
+                                {/* Bill Pay Modal */}
                                 {activeModal === 'billPay' && (
-                                    <div className="p-6 md:p-8 max-h-[85vh] overflow-y-auto relative">
-                                        
-                                        {/* Animated Background Elements for UI/UX */}
+                                    <div className="p-6 md:p-8 max-h-[85vh] overflow-y-auto relative bg-white/90 backdrop-blur-xl">
                                         <div className="absolute top-0 right-0 w-64 h-64 bg-pink-400 rounded-full mix-blend-multiply filter blur-[80px] opacity-20 animate-pulse pointer-events-none"></div>
                                         <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-400 rounded-full mix-blend-multiply filter blur-[80px] opacity-20 animate-pulse pointer-events-none" style={{animationDelay: "2s"}}></div>
 
                                         <div className="text-center mb-6 relative z-10">
-                                            <div className="w-16 h-16 bg-white border border-pink-100 text-[#e2136e] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg icon-animate">
-                                                <i className="fa-solid fa-qrcode"></i>
-                                            </div>
+                                            <div className="w-16 h-16 bg-white border border-pink-100 text-[#e2136e] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-lg icon-animate"><i className="fa-solid fa-qrcode"></i></div>
                                             <h3 className="text-2xl font-black text-slate-800 mb-2">বিল পেমেন্ট</h3>
-                                            <p className="text-slate-500 text-sm font-medium">নিচের কিউআর কোডটি স্ক্যান করে অথবা ম্যানুয়ালি বিল পরিশোধ করুন।</p>
+                                            <p className="text-slate-500 text-sm font-medium">নিচের কিউআর কোডটি স্ক্যান করে অথবা ম্যানুয়ালি বিল পরিশোধ করুন।</p>
                                         </div>
                                         
                                         <div className="space-y-6 relative z-10">
-                                            {/* Poster */}
                                             <div className="rounded-xl overflow-hidden border border-slate-200 shadow-md hover:shadow-lg transition-shadow">
                                                 <img src="https://i.ibb.co.com/qM8WwfFm/image.jpg" alt="Payment Rules" className="w-full h-auto object-contain" />
                                             </div>
 
-                                            {/* Bangla QR Section with App Badges */}
-                                            <div className="bg-white/80 backdrop-blur-sm p-6 md:p-8 rounded-3xl border-2 border-dashed border-purple-300 flex flex-col items-center justify-center text-center shadow-sm hover:border-purple-500 transition-colors relative overflow-hidden">
+                                            <div className="bg-white/60 backdrop-blur-md p-6 md:p-8 rounded-3xl border-2 border-dashed border-purple-300 flex flex-col items-center justify-center text-center shadow-sm hover:border-purple-500 transition-colors relative overflow-hidden">
                                                 <h4 className="font-black text-slate-700 mb-4 text-lg">Bangla QR কোড স্ক্যান করুন</h4>
-                                                
                                                 <div className="p-3 bg-white rounded-2xl shadow-md mb-5 border border-slate-100">
                                                     <img src="https://i.ibb.co.com/84b74tzg/Bangla-Qr.jpg" alt="Bangla QR Code" className="w-48 h-48 md:w-56 md:h-56 object-contain rounded-xl" />
                                                 </div>
-                                                
                                                 <p className="text-sm text-slate-600 font-bold mb-3">যেসব অ্যাপ সাপোর্ট করে:</p>
                                                 <div className="flex flex-wrap justify-center gap-2 mb-2">
                                                     <span className="flex items-center gap-1.5 bg-[#e2136e] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"><i className="fa-solid fa-mobile-button"></i> bKash</span>
@@ -475,16 +457,13 @@
                                                     <span className="flex items-center gap-1.5 bg-[#005fb8] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"><i className="fa-solid fa-shield-halved"></i> Upay</span>
                                                     <span className="flex items-center gap-1.5 bg-[#00a859] text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm"><i className="fa-solid fa-building-columns"></i> Bank Apps</span>
                                                 </div>
-                                                <p className="text-xs text-slate-500 mt-3 font-medium">যেকোনো ব্যাংক বা মোবাইল ব্যাংকিং অ্যাপ থেকে স্ক্যান করে পেমেন্ট করুন খুব সহজেই।</p>
                                             </div>
 
-                                            {/* Manual bKash Steps Separated */}
-                                            <div className="bg-gradient-to-br from-pink-50 to-white p-6 md:p-8 rounded-3xl border border-pink-200 shadow-sm relative overflow-hidden group">
+                                            <div className="bg-gradient-to-br from-pink-50/80 to-white/80 backdrop-blur-md p-6 md:p-8 rounded-3xl border border-pink-200 shadow-sm relative overflow-hidden group">
                                                 <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-pink-100 rounded-full opacity-50 group-hover:scale-150 transition-transform duration-700"></div>
+                                                <h4 className="font-black text-[#e2136e] mb-6 flex items-center text-lg md:text-xl relative z-10"><i className="fa-solid fa-mobile-screen-button mr-2"></i> বিকাশ অ্যাপ দিয়ে সরাসরি পেমেন্ট</h4>
                                                 
-                                                <h4 className="font-black text-[#e2136e] mb-6 flex items-center text-lg md:text-xl relative z-10"><i className="fa-solid fa-mobile-screen-button mr-2"></i> বিকাশ অ্যাপ দিয়ে সরাসরি পেমেন্ট</h4>
-                                                
-                                                <div className="bg-white py-5 px-6 rounded-2xl border border-pink-100 shadow-sm flex flex-col md:flex-row items-center justify-between mb-6 gap-3 relative z-10">
+                                                <div className="bg-white/80 backdrop-blur-sm py-5 px-6 rounded-2xl border border-pink-100 shadow-sm flex flex-col md:flex-row items-center justify-between mb-6 gap-3 relative z-10">
                                                     <span className="text-slate-600 font-bold text-sm md:text-base">আমাদের বিকাশ নাম্বার:</span>
                                                     <span className="text-2xl md:text-3xl font-black text-[#e2136e] tracking-widest bg-pink-50 px-5 py-2.5 rounded-xl border-2 border-pink-200 shadow-inner select-all">01875396497</span>
                                                 </div>
@@ -492,10 +471,10 @@
                                                 <ol className="list-decimal list-inside space-y-3.5 text-sm md:text-base text-slate-700 font-medium relative z-10">
                                                     <li>আপনার বিকাশ অ্যাপে লগ-ইন করুন।</li>
                                                     <li>হোমস্ক্রিন থেকে <span className="font-bold text-[#e2136e] bg-pink-50 px-2.5 py-1 rounded-lg border border-pink-100">Payment</span> বেছে নিন।</li>
-                                                    <li>উপরে দেওয়া <span className="font-black text-slate-900 text-lg">01875396497</span> নাম্বারটি লিখুন।</li>
+                                                    <li>উপরে দেওয়া <span className="font-black text-slate-900 text-lg">01875396497</span> নাম্বারটি লিখুন।</li>
                                                     <li>আপনার মাসিক বিলের পরিমাণ লিখুন।</li>
                                                     <li>রেফারেন্স (Reference) এ আপনার <span className="font-bold text-[#e2136e]">ইউজার আইডি (User ID) বা আপনার মোবাইল নাম্বার</span> লিখুন।</li>
-                                                    <li>আপনার বিকাশ পিন দিয়ে পেমেন্ট সম্পন্ন করুন।</li>
+                                                    <li>আপনার বিকাশ পিন দিয়ে পেমেন্ট সম্পন্ন করুন।</li>
                                                 </ol>
                                             </div>
                                         </div>
@@ -504,7 +483,7 @@
 
                                 {/* Write Review Modal */}
                                 {activeModal === 'review' && (
-                                    <div className="p-8">
+                                    <div className="p-8 bg-white/90 backdrop-blur-xl">
                                         <div className="text-center mb-6">
                                             <div className="w-16 h-16 bg-yellow-50 text-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner"><i className="fa-solid fa-star"></i></div>
                                             <h3 className="text-2xl font-black text-slate-800">মতামত দিন</h3>
@@ -515,13 +494,13 @@
                                             alert('ধন্যবাদ! আপনার রিভিউ জমা হয়েছে।');
                                             closeModal();
                                         }} className="space-y-4">
-                                            <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-yellow-400 outline-none bg-slate-50 font-medium transition-colors" />
-                                            <select required name="rating" className="w-full border-2 border-slate-100 p-4 rounded-2xl focus:border-yellow-400 outline-none bg-slate-50 font-bold text-slate-700 transition-colors">
+                                            <input required name="name" type="text" placeholder="আপনার নাম" className="w-full border-2 border-slate-100/50 bg-white/50 p-4 rounded-2xl focus:border-yellow-400 outline-none font-medium transition-colors" />
+                                            <select required name="rating" className="w-full border-2 border-slate-100/50 bg-white/50 p-4 rounded-2xl focus:border-yellow-400 outline-none font-bold text-slate-700 transition-colors">
                                                 <option value="5">⭐⭐⭐⭐⭐ (অসাধারণ)</option>
                                                 <option value="4">⭐⭐⭐⭐ (খুব ভালো)</option>
                                                 <option value="3">⭐⭐⭐ (মোটামুটি)</option>
                                             </select>
-                                            <textarea required name="comment" placeholder="আপনার অভিজ্ঞতা লিখুন..." className="w-full border-2 border-slate-100 p-4 rounded-2xl h-28 focus:border-yellow-400 outline-none bg-slate-50 resize-none font-medium transition-colors"></textarea>
+                                            <textarea required name="comment" placeholder="আপনার অভিজ্ঞতা লিখুন..." className="w-full border-2 border-slate-100/50 bg-white/50 p-4 rounded-2xl h-28 focus:border-yellow-400 outline-none resize-none font-medium transition-colors"></textarea>
                                             <button type="submit" className="w-full bg-[#2d1960] text-white py-4 rounded-2xl font-bold shadow-lg hover:bg-[#5e3186] hover:-translate-y-1 transition-all">রিভিউ জমা দিন</button>
                                         </form>
                                     </div>
@@ -530,7 +509,7 @@
                         </div>
                     )}
 
-                    {/* Hero Section - Banner System Preserved Exactly */}
+                    {/* Hero Section */}
                     <div id="home" className="relative pt-20 md:pt-24 bg-transparent z-10 mb-12">
                         <div className="w-full aspect-[16/9] md:aspect-[21/9] lg:h-[65vh] max-h-[600px] overflow-hidden rounded-b-[2.5rem] md:rounded-b-[4rem] shadow-2xl relative ring-1 ring-black/5">
                             {(!webConfig?.banners || webConfig.banners.length === 0) ? (
@@ -544,8 +523,8 @@
                         </div>
                     </div>
 
-                    {/* Active Status Ribbon - Modernized */}
-                    <div className="bg-white/80 backdrop-blur-xl py-5 shadow-lg shadow-purple-900/5 border border-white relative z-10 -mt-16 mx-4 md:mx-auto md:max-w-4xl rounded-[2rem]">
+                    {/* Active Status Ribbon - Glassmorphism */}
+                    <div className="glass-card py-5 shadow-lg shadow-purple-900/5 relative z-10 -mt-16 mx-4 md:mx-auto md:max-w-4xl rounded-[2rem]">
                         <div className="px-6 flex justify-around items-center text-sm md:text-base font-bold text-[#2d1960]">
                             <span className="flex items-center"><span className="relative flex h-3 w-3 mr-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span></span> ২৪/৭ সাপোর্ট</span>
                             <span className="flex items-center"><i className="fa-solid fa-bolt mr-2 text-[#5e3186] text-xl"></i> সুপার ফাস্ট</span>
@@ -553,7 +532,7 @@
                         </div>
                     </div>
 
-                    {/* About & Services - Premium Cards */}
+                    {/* About & Services */}
                     <div id="about" className="py-24 relative z-10">
                         <div className="max-w-7xl mx-auto px-6 text-center">
                             <h2 className="text-3xl md:text-5xl font-black text-slate-800 mb-6 drop-shadow-sm tracking-tight">গতি এক্সপ্রেসে স্বাগতম</h2>
@@ -562,243 +541,4 @@
                             </p>
                             
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-                                <div className="bg-white p-8 rounded-3xl hover:-translate-y-2 transition-all duration-300 group shadow-xl shadow-purple-900/5 border-b-4 border-transparent hover:border-[#5e3186] relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-purple-50 to-transparent rounded-bl-full opacity-50 -z-10 group-hover:scale-110 transition-transform"></div>
-                                   <div className="w-16 h-16 bg-gradient-to-br from-[#2d1960] to-[#5e3186] rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-md">
-                                       <i className="fa-solid fa-rocket text-2xl text-white icon-animate"></i>
-                                   </div>
-                                   <h4 className="font-bold text-xl text-slate-800 mb-2">হাই স্পিড</h4>
-                                   <p className="text-slate-500 text-sm font-medium">নিরবচ্ছিন্ন বাফার-ফ্রি ইন্টারনেট অভিজ্ঞতা</p>
-                                </div>
-                                <div className="bg-white p-8 rounded-3xl hover:-translate-y-2 transition-all duration-300 group shadow-xl shadow-purple-900/5 border-b-4 border-transparent hover:border-[#5e3186] relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-purple-50 to-transparent rounded-bl-full opacity-50 -z-10 group-hover:scale-110 transition-transform"></div>
-                                   <div className="w-16 h-16 bg-gradient-to-br from-[#2d1960] to-[#5e3186] rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-md">
-                                       <i className="fa-solid fa-server text-2xl text-white icon-animate" style={{animationDelay: "0.5s"}}></i>
-                                   </div>
-                                   <h4 className="font-bold text-xl text-slate-800 mb-2">BDIX সাপোর্ট</h4>
-                                   <p className="text-slate-500 text-sm font-medium">হাজারো লোকাল সার্ভারে সুপার স্পিড</p>
-                                </div>
-                                <div className="bg-white p-8 rounded-3xl hover:-translate-y-2 transition-all duration-300 group shadow-xl shadow-purple-900/5 border-b-4 border-transparent hover:border-[#5e3186] relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-purple-50 to-transparent rounded-bl-full opacity-50 -z-10 group-hover:scale-110 transition-transform"></div>
-                                   <div className="w-16 h-16 bg-gradient-to-br from-[#2d1960] to-[#5e3186] rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-md">
-                                       <i className="fa-solid fa-gamepad text-2xl text-white icon-animate" style={{animationDelay: "1s"}}></i>
-                                   </div>
-                                   <h4 className="font-bold text-xl text-slate-800 mb-2">স্মুথ গেমিং</h4>
-                                   <p className="text-slate-500 text-sm font-medium">লো-পিং এ সেরা গেমিং এক্সপেরিয়েন্স</p>
-                                </div>
-                                <div className="bg-white p-8 rounded-3xl hover:-translate-y-2 transition-all duration-300 group shadow-xl shadow-purple-900/5 border-b-4 border-transparent hover:border-[#5e3186] relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-purple-50 to-transparent rounded-bl-full opacity-50 -z-10 group-hover:scale-110 transition-transform"></div>
-                                   <div className="w-16 h-16 bg-gradient-to-br from-[#2d1960] to-[#5e3186] rounded-2xl flex items-center justify-center mb-6 mx-auto shadow-md">
-                                       <i className="fa-solid fa-headset text-2xl text-white icon-animate" style={{animationDelay: "1.5s"}}></i>
-                                   </div>
-                                   <h4 className="font-bold text-xl text-slate-800 mb-2">২৪/৭ সাপোর্ট</h4>
-                                   <p className="text-slate-500 text-sm font-medium">যেকোনো সমস্যায় সার্বক্ষণিক গ্রাহক সেবা</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Packages Section - Redesigned Cards */}
-                    <div id="packages" className="py-20 relative z-10">
-                        <div className="max-w-7xl mx-auto px-6">
-                            <div className="text-center mb-16">
-                                <h2 className="text-3xl md:text-5xl font-black text-slate-800 mb-4 tracking-tight">আমাদের জনপ্রিয় প্যাকেজ</h2>
-                                <div className="w-24 h-1.5 bg-gradient-to-r from-[#2d1960] to-[#5e3186] mx-auto rounded-full"></div>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {packages.length === 0 ? (
-                                    <div className="col-span-full text-center text-slate-500 p-12 bg-white/50 rounded-[2rem] border-2 border-dashed border-slate-300 font-bold">শীঘ্রই নতুন প্যাকেজ আপডেট করা হবে।</div>
-                                ) : (
-                                    visiblePackages.map((pkg, i) => (
-                                        <div key={pkg.id} className="bg-white rounded-3xl p-8 md:p-10 border border-purple-50 shadow-xl shadow-purple-900/5 hover:shadow-2xl hover:shadow-purple-900/10 hover:-translate-y-2 transition-all duration-300 relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-purple-50 to-transparent rounded-bl-full opacity-60 -z-10 group-hover:scale-110 transition-transform duration-500"></div>
-                                            
-                                            <div className="mb-2">
-                                                <h3 className="text-2xl font-black text-slate-800 uppercase tracking-wide">{pkg.name}</h3>
-                                            </div>
-                                            
-                                            <div className="flex items-baseline mb-6 border-b-2 border-slate-50 pb-6">
-                                                <span className="text-5xl font-black bg-clip-text text-transparent bg-gradient-to-r from-[#2d1960] to-[#5e3186] tracking-tight">{pkg.speed}</span>
-                                            </div>
-                                            
-                                            <div className="mb-8 flex items-baseline">
-                                                <span className="text-4xl font-black text-[#2d1960]">৳{pkg.price}</span><span className="text-slate-500 font-bold ml-2">/ মাস</span>
-                                            </div>
-                                            
-                                            <ul className="space-y-4 mb-10">
-                                                {pkg.features.map((f, j) => (
-                                                    <li key={j} className="flex items-start font-semibold text-slate-600 text-sm md:text-base">
-                                                        <i className="fa-solid fa-circle-check text-[#5e3186] mt-1 mr-3 text-lg"></i> {f}
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                            
-                                            <button onClick={() => openModal('connection')} className="block text-center w-full bg-gradient-to-r from-[#2d1960] to-[#5e3186] text-white py-4 rounded-2xl font-bold hover:shadow-lg hover:shadow-purple-900/20 hover:scale-[1.02] transition-all">সংযোগ নিন</button>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                            
-                            {packages.length > 3 && !showAllPkgs && (
-                                <div className="text-center mt-12">
-                                    <button onClick={() => setShowAllPkgs(true)} className="bg-white text-[#2d1960] px-10 py-4 rounded-full font-bold shadow-md shadow-purple-900/5 hover:shadow-lg border border-purple-100 hover:bg-purple-50 transition-all">
-                                        আরও প্যাকেজ দেখুন <i className="fa-solid fa-angle-down ml-2"></i>
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Reviews Section - Modernized Cards */}
-                    <div id="review" className="py-20 relative z-10 bg-white shadow-[0_0_40px_rgba(0,0,0,0.02)] border-y border-slate-100">
-                        <div className="max-w-7xl mx-auto px-6">
-                            <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
-                                <div className="text-center md:text-left">
-                                    <h2 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight">গ্রাহকদের মতামত</h2>
-                                    <p className="text-slate-500 mt-2 font-medium">আমাদের সার্ভিস সম্পর্কে গ্রাহকরা যা বলছেন</p>
-                                </div>
-                                <button onClick={() => openModal('review')} className="bg-[#5e3186] text-white px-8 py-3.5 rounded-full font-bold shadow-lg shadow-purple-900/20 hover:bg-[#2d1960] hover:-translate-y-1 transition-all"><i className="fa-solid fa-pen-nib mr-2"></i> মতামত দিন</button>
-                            </div>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                                {reviews.length === 0 ? <p className="text-slate-500 text-center col-span-full py-12 font-bold bg-slate-50 rounded-3xl border border-dashed border-slate-200">এখনো কোনো রিভিউ দেওয়া হয়নি।</p> : 
-                                    reviews.map((r, idx) => (
-                                    <div key={r.id} className="bg-slate-50/50 p-8 rounded-3xl shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all relative">
-                                        <i className="fa-solid fa-quote-right absolute top-6 right-8 text-4xl text-purple-100 opacity-50"></i>
-                                        <div className="flex items-center gap-4 mb-6">
-                                            <div className="w-14 h-14 bg-gradient-to-br from-[#2d1960] to-[#5e3186] text-white rounded-full flex items-center justify-center font-black text-2xl shrink-0 shadow-md">{r.customerName.charAt(0)}</div>
-                                            <div>
-                                                <h4 className="font-bold text-slate-800 text-lg leading-tight">{r.customerName}</h4>
-                                                <div className="text-yellow-400 text-sm mt-1.5 space-x-1">
-                                                    {[...Array(5)].map((_, i) => <i key={i} className={`fa-star ${i < r.rating ? 'fa-solid' : 'fa-regular text-slate-300'}`}></i>)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <p className="text-slate-600 font-medium leading-relaxed italic">"{r.comment}"</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Footer & Contact Section */}
-                    <footer id="contact" className="bg-[#0b1120] text-slate-300 pt-20 pb-10 border-t-[8px] border-[#5e3186] relative z-10">
-                        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-16">
-                            
-                            {/* Brand Info */}
-                            <div>
-                                <div className="flex items-center gap-3 mb-6">
-                                    <img src="https://i.ibb.co.com/4Zy9b057/black-goti.png" alt="Logo" className="h-12 bg-white rounded-xl p-2 shadow-lg" />
-                                    <span className="text-3xl font-black text-white tracking-wider">গতি এক্সপ্রেস</span>
-                                </div>
-                                <p className="text-sm leading-relaxed mb-8 font-medium text-slate-400 pr-4">
-                                    গতি এক্সপ্রেস একটি আধুনিক ব্রডব্যান্ড ইন্টারনেট প্রোভাইডার। গ্রাহকদের সর্বোচ্চ সেবা ও নিরবচ্ছিন্ন বাফার-ফ্রি ইন্টারনেট নিশ্চিত করাই আমাদের প্রধান লক্ষ্য।
-                                </p>
-                                <div className="flex gap-4">
-                                    <a href="https://www.facebook.com/gotiexpress.net" target="_blank" className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors shadow-md"><i className="fa-brands fa-facebook-f text-lg"></i></a>
-                                    <a href="https://wa.me/8801815151122" target="_blank" className="w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center hover:bg-green-500 hover:text-white transition-colors shadow-md"><i className="fa-brands fa-whatsapp text-xl"></i></a>
-                                </div>
-                            </div>
-
-                            {/* Contact Details */}
-                            <div>
-                                <h4 className="text-white font-bold text-xl mb-8 uppercase tracking-widest border-b border-slate-800 pb-4">যোগাযোগ</h4>
-                                <ul className="space-y-6 text-sm font-medium">
-                                    <li className="flex items-start group">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-[#a78bfa] shrink-0 mr-4 group-hover:bg-[#5e3186] group-hover:text-white transition-colors"><i className="fa-solid fa-location-dot"></i></div> 
-                                        <span className="pt-1.5 leading-relaxed text-slate-300">উপজেলা মোড়, মাস্টার মার্কেট (২য় তলা),<br/>হরিণাকুণ্ডু, ঝিনাইদহ।</span>
-                                    </li>
-                                    <li className="flex items-center group">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-[#a78bfa] shrink-0 mr-4 group-hover:bg-[#5e3186] group-hover:text-white transition-colors"><i className="fa-solid fa-phone"></i></div>
-                                        <div className="flex flex-col space-y-1">
-                                            <span className="font-bold text-white tracking-widest text-base">01813910850</span>
-                                            <span className="font-bold text-white tracking-widest text-base">01815151122</span>
-                                        </div>
-                                    </li>
-                                    <li className="flex items-center group">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-800 flex items-center justify-center text-[#a78bfa] shrink-0 mr-4 group-hover:bg-[#5e3186] group-hover:text-white transition-colors"><i className="fa-solid fa-envelope"></i></div> 
-                                        <span className="text-slate-300">gotiexpresshelp@gmail.com</span>
-                                    </li>
-                                </ul>
-                            </div>
-
-                            {/* Google Map Embedded */}
-                            <div>
-                                <h4 className="text-white font-bold text-xl mb-8 uppercase tracking-widest border-b border-slate-800 pb-4">অফিস ম্যাপ</h4>
-                                <div className="h-48 w-full rounded-2xl overflow-hidden shadow-xl border border-slate-700/50 group">
-                                    <iframe 
-                                        src="https://maps.google.com/maps?q=23.652056,89.045194&t=k&z=15&ie=UTF8&iwloc=&output=embed" 
-                                        width="100%" 
-                                        height="100%" 
-                                        style={{ border: 0 }} 
-                                        allowFullScreen="" 
-                                        loading="lazy" 
-                                        referrerPolicy="no-referrer-when-downgrade"
-                                        className="group-hover:scale-105 transition-transform duration-700">
-                                    </iframe>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Copyright */}
-                        <div className="max-w-7xl mx-auto px-6 mt-20 pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center text-sm font-semibold text-slate-500 gap-4">
-                            <p>&copy; {new Date().getFullYear()} Goti Express. All rights reserved.</p>
-                            <p>Developed & Managed by <span className="text-purple-400">Goti Express IT</span></p>
-                        </div>
-                    </footer>
-
-                    {/* Floating WhatsApp Button */}
-                    <a href="https://wa.me/8801815151122" target="_blank" title="WhatsApp এ মেসেজ দিন" className="fixed bottom-8 right-6 md:right-8 w-16 h-16 bg-green-500 text-white rounded-full flex items-center justify-center text-4xl shadow-[0_0_30px_rgba(34,197,94,0.4)] hover:bg-green-600 hover:scale-110 transition-all z-50 animate-bounce border-2 border-white">
-                        <i className="fa-brands fa-whatsapp"></i>
-                    </a>
-                </div>
-            );
-        }
-
-        // Modern Sliding Banner Component - Banner System Preserved Exactly
-        function HeroSlider({ banners }) {
-            const [currentIndex, setCurrentIndex] = useState(0);
-            const [imagesLoaded, setImagesLoaded] = useState({});
-
-            useEffect(() => {
-                if(banners.length <= 1) return;
-                const timer = setInterval(() => {
-                    setCurrentIndex(prev => (prev + 1) % banners.length);
-                }, 4000); 
-                return () => clearInterval(timer);
-            }, [banners]);
-
-            const handleImageLoad = (index) => {
-                setImagesLoaded(prev => ({ ...prev, [index]: true }));
-            };
-
-            return (
-                <div className="absolute inset-0 w-full h-full bg-slate-900 overflow-hidden">
-                    <div 
-                        className="flex w-full h-full transition-transform duration-1000 ease-in-out"
-                        style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-                    >
-                        {banners.map((url, i) => (
-                            <div key={i} className="min-w-full h-full relative">
-                                <img 
-                                    src={url} 
-                                    className={`w-full h-full object-cover transition-opacity duration-500 ease-in-out ${imagesLoaded[i] ? 'opacity-100' : 'opacity-0'}`}
-                                    alt={`Banner ${i+1}`} 
-                                    loading="lazy"
-                                    onLoad={() => handleImageLoad(i)}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                    {/* Shadow overlay for navbar visibility */}
-                    <div className="absolute top-0 w-full h-32 bg-gradient-to-b from-black/50 to-transparent pointer-events-none"></div>
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
-</body>
-</html>
+                                <div className="glass-card p
